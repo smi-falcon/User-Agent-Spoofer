@@ -41,6 +41,16 @@
     return "";
   };
 
+  const buildLegacy = (platform) => {
+    if (/iPhone|iPad|iPod/i.test(platform)) {
+      return { dpr: 3, deviceMemory: 4, downlink: 10, ect: "4g", rtt: 100 };
+    }
+    if (/Android/i.test(platform)) {
+      return { dpr: 2.625, deviceMemory: 4, downlink: 10, ect: "4g", rtt: 100 };
+    }
+    return { dpr: 1, deviceMemory: 8, downlink: 10, ect: "4g", rtt: 50 };
+  };
+
   const apply = (stored) => {
     if (!stored || !stored.enabled) return;
 
@@ -115,6 +125,28 @@
     };
 
     define(Navigator.prototype, "userAgentData", uaData);
+
+    const legacy = buildLegacy(platform);
+
+    define(Window.prototype, "devicePixelRatio", legacy.dpr);
+
+    define(Navigator.prototype, "deviceMemory", legacy.deviceMemory);
+
+    const connection = {
+      downlink: legacy.downlink,
+      effectiveType: legacy.ect,
+      rtt: legacy.rtt,
+      saveData: false,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => true
+    };
+
+    define(Navigator.prototype, "connection", connection);
+
+    define(Screen.prototype, "colorDepth", 24);
+    define(Screen.prototype, "pixelDepth", 24);
   };
 
   const consume = () => {
