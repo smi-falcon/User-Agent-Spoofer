@@ -17,12 +17,49 @@ const TURNSTILE_HOSTS = [
   "cloudflareinsights.com"
 ];
 
+const GREASE_BRANDS = [
+  { brand: "Not/A)Brand", version: "8" },
+  { brand: "Not?A_Brand", version: "24" },
+  { brand: "Not;A=Brand", version: "99" }
+];
+
 let pending = Promise.resolve();
 let userExcludedDomains = [];
 
 function enqueue(task) {
   pending = pending.then(task).catch(() => {});
   return pending;
+}
+
+function pickGrease() {
+  return GREASE_BRANDS[Math.floor(Math.random() * GREASE_BRANDS.length)];
+}
+
+function applyGrease(value, grease) {
+  if (!value || !grease || !grease.brand) return value;
+  return value.replace(/"Not[^"]*";v="\d+"/, `"${grease.brand}";v="${grease.version}"`);
+}
+
+async function getGrease() {
+  const stored = await chrome.storage.local.get(["__grease"]);
+  const grease = stored.__grease;
+  if (
+    grease &&
+    typeof grease.brand === "string" &&
+    typeof grease.version === "string" &&
+    GREASE_BRANDS.some((g) => g.brand === grease.brand)
+  ) {
+    return grease;
+  }
+  const next = pickGrease();
+  await chrome.storage.local.set({ __grease: next });
+  return next;
+}
+
+async function regenerateGrease() {
+  const next = pickGrease();
+  await chrome.storage.local.set({ __grease: next });
+  return next;
 }
 
 async function loadExcludedDomains() {
@@ -45,6 +82,7 @@ async function applyRules() {
     return;
   }
 
+  const grease = await getGrease();
   const requestHeaders = [];
 
   if (customUA) {
@@ -56,7 +94,8 @@ async function applyRules() {
     requestHeaders.push({ header: "user-agent", operation: "set", value: preset.ua });
     if (preset.hints) {
       for (const [name, value] of Object.entries(preset.hints)) {
-        requestHeaders.push({ header: name, operation: "set", value });
+        const finalValue = name === "sec-ch-ua" ? applyGrease(value, grease) : value;
+        requestHeaders.push({ header: name, operation: "set", value: finalValue });
       }
       for (const h of CH_HEADERS) {
         if (!(h in preset.hints)) {
@@ -99,8 +138,21 @@ const sync = () => enqueue(async () => {
   await applyRules();
 });
 
-chrome.runtime.onInstalled.addListener(sync);
-chrome.runtime.onStartup.addListener(sync);
+chrome.runtime.onInstalled.addListener(() => {
+  enqueue(async () => {
+    await regenerateGrease();
+    await loadExcludedDomains();
+    await applyRules();
+  });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  enqueue(async () => {
+    await regenerateGrease();
+    await loadExcludedDomains();
+    await applyRules();
+  });
+});
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;

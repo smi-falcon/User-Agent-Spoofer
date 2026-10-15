@@ -1,6 +1,6 @@
 (async () => {
   const stored = await chrome.storage.local.get([
-    "enabled", "preset", "customUA", "excludedDomains"
+    "enabled", "preset", "customUA", "excludedDomains", "__grease"
   ]);
 
   if (!stored.enabled) return;
@@ -43,10 +43,19 @@
     define(Navigator.prototype, "platform", platformRaw || "Win32");
     define(Navigator.prototype, "vendor", "Google Inc.");
 
+    let uaHeader = preset.hints["sec-ch-ua"] || "";
+    const grease = stored.__grease;
+    if (grease && grease.brand && grease.version) {
+      uaHeader = uaHeader.replace(
+        /"Not[^"]*";v="\d+"/,
+        `"${grease.brand}";v="${grease.version}"`
+      );
+    }
+
     const brands = [];
     const re = /"([^"]+)";v="([^"]+)"/g;
     let m;
-    while ((m = re.exec(preset.hints["sec-ch-ua"])) !== null) {
+    while ((m = re.exec(uaHeader)) !== null) {
       brands.push({ brand: m[1], version: m[2] });
     }
 
