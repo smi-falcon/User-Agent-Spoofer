@@ -14,7 +14,15 @@ const CH_HEADERS = [
   "sec-ch-ua-arch",
   "sec-ch-ua-bitness",
   "sec-ch-ua-model",
-  "sec-ch-ua-wow64"
+  "sec-ch-ua-wow64",
+  "sec-ch-ua-form-factors"
+];
+
+const PREFERENCE_HEADERS = [
+  "sec-ch-prefers-color-scheme",
+  "sec-ch-prefers-reduced-motion",
+  "sec-ch-prefers-reduced-transparency",
+  "sec-ch-prefers-contrast"
 ];
 
 const TURNSTILE_HOSTS = [
@@ -104,6 +112,32 @@ function buildFullVersionList(uaHeader, fullVersion) {
   return parts.join(", ");
 }
 
+function buildFormFactors(preset) {
+  const platform = preset.platform || "";
+  if (/iPhone|iPad|iPod|Android/i.test(platform)) {
+    return "Desktop, Mobile";
+  }
+  return "Desktop";
+}
+
+function buildArch(preset) {
+  const platform = preset.platform || "";
+  if (/iPhone|iPad|iPod|Android/i.test(platform)) return '"arm"';
+  if (/i686|i386/i.test(platform)) return '"x86"';
+  return '"x86"';
+}
+
+function buildBitness(preset) {
+  const platform = preset.platform || "";
+  if (/i686|i386/i.test(platform)) return '"32"';
+  return '"64"';
+}
+
+function buildWow64(preset) {
+  const platform = preset.platform || "";
+  return /WOW64/i.test(platform) ? "?1" : "?0";
+}
+
 async function loadExcludedDomains() {
   const stored = await chrome.storage.local.get(["excludedDomains"]);
   userExcludedDomains = Array.isArray(stored.excludedDomains) ? stored.excludedDomains : [];
@@ -131,6 +165,9 @@ async function applyRules() {
     requestHeaders.push({ header: "user-agent", operation: "set", value: customUA });
     for (const h of CH_HEADERS) {
       requestHeaders.push({ header: h, operation: "remove" });
+    }
+    for (const h of PREFERENCE_HEADERS) {
+      requestHeaders.push({ header: h, operation: "set", value: h === "sec-ch-prefers-color-scheme" ? "dark" : "no-preference" });
     }
   } else if (preset) {
     requestHeaders.push({ header: "user-agent", operation: "set", value: preset.ua });
@@ -160,9 +197,34 @@ async function applyRules() {
         }
       }
 
+      requestHeaders.push({
+        header: "sec-ch-ua-arch",
+        operation: "set",
+        value: buildArch(preset)
+      });
+      requestHeaders.push({
+        header: "sec-ch-ua-bitness",
+        operation: "set",
+        value: buildBitness(preset)
+      });
+      requestHeaders.push({
+        header: "sec-ch-ua-wow64",
+        operation: "set",
+        value: buildWow64(preset)
+      });
+      requestHeaders.push({
+        header: "sec-ch-ua-form-factors",
+        operation: "set",
+        value: buildFormFactors(preset)
+      });
+
       const dynamicHeaders = new Set([
         "sec-ch-ua-full-version",
-        "sec-ch-ua-full-version-list"
+        "sec-ch-ua-full-version-list",
+        "sec-ch-ua-arch",
+        "sec-ch-ua-bitness",
+        "sec-ch-ua-wow64",
+        "sec-ch-ua-form-factors"
       ]);
 
       for (const h of CH_HEADERS) {
@@ -170,8 +232,19 @@ async function applyRules() {
           requestHeaders.push({ header: h, operation: "remove" });
         }
       }
+
+      for (const h of PREFERENCE_HEADERS) {
+        requestHeaders.push({
+          header: h,
+          operation: "set",
+          value: h === "sec-ch-prefers-color-scheme" ? "dark" : "no-preference"
+        });
+      }
     } else {
       for (const h of CH_HEADERS) {
+        requestHeaders.push({ header: h, operation: "remove" });
+      }
+      for (const h of PREFERENCE_HEADERS) {
         requestHeaders.push({ header: h, operation: "remove" });
       }
     }

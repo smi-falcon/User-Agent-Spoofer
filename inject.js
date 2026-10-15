@@ -84,6 +84,10 @@
     const bitness = /i686|i386/i.test(platform) ? "32" : "64";
     const wow64 = /WOW64/i.test(platform);
 
+    const formFactors = /iPhone|iPad|iPod|Android/i.test(platform)
+      ? ["Desktop", "Mobile"]
+      : ["Desktop"];
+
     const fullVersion = extractFullVersion(ua);
 
     const fullVersionList = brands.map((b) => ({
@@ -104,6 +108,7 @@
         if (hints.includes("uaFullVersion")) out.uaFullVersion = fullVersion;
         if (hints.includes("fullVersionList")) out.fullVersionList = fullVersionList;
         if (hints.includes("wow64")) out.wow64 = wow64;
+        if (hints.includes("formFactors")) out.formFactors = formFactors;
         return Promise.resolve(out);
       },
       toJSON: () => ({ brands, mobile, platform: platformRaw })
