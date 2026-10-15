@@ -6,10 +6,12 @@
 
 Расширение для браузера, подменяющее User-Agent и Client Hints на выбранный профиль.
 
-![Version](https://img.shields.io/badge/Version-1.6.0-7c6cff)
+![Version](https://img.shields.io/badge/Version-1.7.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)
 ![Chromium](https://img.shields.io/badge/Chromium-✓-4ade80)
 ![License](https://img.shields.io/badge/License-MIT-8b8b9a)
+
+**[English](Readme.en.md) | [Русский](Readme.md)**
 
 </div>
 
@@ -78,6 +80,7 @@ User-Agent-Spoofer/
 ├── popup.css
 ├── popup.js
 ├── Readme.md
+├── Readme.en.md
 ├── Changelog.md
 ├── License
 └── icons/
