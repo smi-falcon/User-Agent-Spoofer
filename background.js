@@ -274,6 +274,123 @@ async function applyRules() {
   });
 }
 
+async function checkHeaders() {
+  const state = await chrome.storage.local.get(["enabled", "preset", "customUA"]);
+  if (!state.enabled) {
+    return { ok: false, reason: "disabled" };
+  }
+
+  let res;
+  try {
+    res = await fetch("https://httpbin.org/headers", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "omit"
+    });
+  } catch (e) {
+    return { ok: false, reason: "network" };
+  }
+
+  if (!res.ok) {
+    return { ok: false, reason: "status", status: res.status };
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    return { ok: false, reason: "parse" };
+  }
+
+  const received = data && data.headers ? data.headers : {};
+
+  const pick = (name) => {
+    for (const [k, v] of Object.entries(received)) {
+      if (k.toLowerCase() === name) return v;
+    }
+    return null;
+  };
+
+  const expected = {};
+
+  if (state.customUA) {
+    expected["user-agent"] = state.customUA;
+  } else if (state.preset) {
+    const preset = state.preset;
+    expected["user-agent"] = preset.ua;
+    if (preset.hints) {
+      for (const [name, value] of Object.entries(preset.hints)) {
+        expected[name] = value;
+      }
+      const fullVersion = extractFullVersion(preset.ua);
+      if (fullVersion) {
+        expected["sec-ch-ua-full-version"] = `"${fullVersion}"`;
+      }
+      expected["sec-ch-ua-arch"] = buildArch(preset);
+      expected["sec-ch-ua-bitness"] = buildBitness(preset);
+      expected["sec-ch-ua-wow64"] = buildWow64(preset);
+      expected["sec-ch-ua-form-factors"] = buildFormFactors(preset);
+    }
+  }
+
+  const report = [];
+  for (const [name, expectedValue] of Object.entries(expected)) {
+    const actual = pick(name);
+    const isGreaseField = name === "sec-ch-ua";
+    let status;
+    if (actual === null) {
+      status = "missing";
+    } else if (actual === expectedValue) {
+      status = "match";
+    } else if (isGreaseField) {
+      const actualBrands = (actual.match(/"([^"]+)";v="([^"]+)"/g) || []).length;
+      const expectedBrands = (expectedValue.match(/"([^"]+)";v="([^"]+)"/g) || []).length;
+      const actualNot = /"Not[^"]*";v="\d+"/.test(actual);
+      status = actualBrands === expectedBrands && actualNot ? "match" : "mismatch";
+    } else {
+      status = "mismatch";
+    }
+    report.push({
+      name,
+      expected: expectedValue,
+      actual: actual,
+      status
+    });
+  }
+
+  for (const h of CH_HEADERS) {
+    if (h in expected) continue;
+    const actual = pick(h);
+    if (actual !== null && state.preset && state.preset.hints) {
+      report.push({
+        name: h,
+        expected: null,
+        actual,
+        status: "leak"
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    report,
+    summary: {
+      total: report.length,
+      match: report.filter((r) => r.status === "match").length,
+      mismatch: report.filter((r) => r.status === "mismatch").length,
+      missing: report.filter((r) => r.status === "missing").length,
+      leak: report.filter((r) => r.status === "leak").length
+    }
+  };
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg && msg.type === "check-headers") {
+    checkHeaders().then(sendResponse);
+    return true;
+  }
+});
+
 const sync = () => enqueue(async () => {
   await loadExcludedDomains();
   await applyRules();

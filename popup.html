@@ -29,6 +29,7 @@
       <nav class="tabs">
         <button class="tab active" data-tab="profiles">Профили</button>
         <button class="tab" data-tab="exceptions">Исключения</button>
+        <button class="tab" data-tab="check">Проверка</button>
       </nav>
 
       <section class="panel panel-profiles active" id="panel-profiles">
@@ -46,6 +47,15 @@
         <div class="list" id="exc-list"></div>
         <footer class="footer">
           <button id="exc-clear-btn">Очистить всё</button>
+        </footer>
+      </section>
+
+      <section class="panel panel-check" id="panel-check">
+        <div class="list" id="check-list">
+          <div class="empty" id="check-empty">Нажмите «Проверить» для анализа заголовков</div>
+        </div>
+        <footer class="footer">
+          <button id="check-btn">Проверить</button>
         </footer>
       </section>
     </div>

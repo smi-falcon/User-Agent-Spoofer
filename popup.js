@@ -8,13 +8,17 @@ const footerEl = document.querySelector(".panel-profiles .footer");
 const tabs = document.querySelectorAll(".tab");
 const panels = {
   profiles: document.getElementById("panel-profiles"),
-  exceptions: document.getElementById("panel-exceptions")
+  exceptions: document.getElementById("panel-exceptions"),
+  check: document.getElementById("panel-check")
 };
 
 const excListEl = document.getElementById("exc-list");
 const excInput = document.getElementById("exc-input");
 const excAddBtn = document.getElementById("exc-add-btn");
 const excClearBtn = document.getElementById("exc-clear-btn");
+
+const checkListEl = document.getElementById("check-list");
+const checkBtn = document.getElementById("check-btn");
 
 const BROWSER_LABELS = {
   Chrome: "Chrome",
@@ -285,6 +289,110 @@ function renderExceptions() {
   });
 }
 
+function renderCheck(result) {
+  checkListEl.innerHTML = "";
+
+  if (!result || !result.ok) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    if (result && result.reason === "disabled") {
+      empty.textContent = "Расширение отключено";
+    } else if (result && result.reason === "network") {
+      empty.textContent = "Не удалось выполнить запрос";
+    } else if (result && result.reason === "status") {
+      empty.textContent = "Ошибка сервера: " + result.status;
+    } else {
+      empty.textContent = "Нет данных";
+    }
+    checkListEl.appendChild(empty);
+    return;
+  }
+
+  const summaryEl = document.createElement("div");
+  summaryEl.className = "check-summary";
+
+  const s = result.summary;
+  const matchBadge = document.createElement("span");
+  matchBadge.className = "check-badge ok";
+  matchBadge.textContent = "Совпадает: " + s.match;
+  summaryEl.appendChild(matchBadge);
+
+  if (s.mismatch) {
+    const b = document.createElement("span");
+    b.className = "check-badge err";
+    b.textContent = "Расхождение: " + s.mismatch;
+    summaryEl.appendChild(b);
+  }
+  if (s.missing) {
+    const b = document.createElement("span");
+    b.className = "check-badge warn";
+    b.textContent = "Отсутствует: " + s.missing;
+    summaryEl.appendChild(b);
+  }
+  if (s.leak) {
+    const b = document.createElement("span");
+    b.className = "check-badge err";
+    b.textContent = "Утечка: " + s.leak;
+    summaryEl.appendChild(b);
+  }
+
+  checkListEl.appendChild(summaryEl);
+
+  result.report.forEach((row) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "check-row";
+
+    const headEl = document.createElement("div");
+    headEl.className = "check-row-head";
+
+    const dot = document.createElement("span");
+    dot.className = "check-dot " + row.status;
+    headEl.appendChild(dot);
+
+    const nameEl = document.createElement("span");
+    nameEl.className = "check-name";
+    nameEl.textContent = row.name;
+    headEl.appendChild(nameEl);
+
+    rowEl.appendChild(headEl);
+
+    const valuesEl = document.createElement("div");
+    valuesEl.className = "check-values";
+
+    if (row.status === "missing") {
+      valuesEl.innerHTML = `<span class="label">не отправлен</span>`;
+    } else if (row.status === "leak") {
+      valuesEl.innerHTML = `<span class="label">утечка:</span> <span class="val-danger">${escapeHtml(row.actual || "")}</span>`;
+    } else {
+      valuesEl.innerHTML = `<span class="label">факт:</span> ${escapeHtml(row.actual || "")}`;
+    }
+
+    rowEl.appendChild(valuesEl);
+    checkListEl.appendChild(rowEl);
+  });
+}
+
+async function runCheck() {
+  checkBtn.disabled = true;
+  checkBtn.textContent = "Проверка…";
+  checkListEl.innerHTML = "";
+
+  const loadingEl = document.createElement("div");
+  loadingEl.className = "empty";
+  loadingEl.textContent = "Запрос к httpbin.org…";
+  checkListEl.appendChild(loadingEl);
+
+  try {
+    const result = await chrome.runtime.sendMessage({ type: "check-headers" });
+    renderCheck(result);
+  } catch (e) {
+    renderCheck({ ok: false, reason: "network" });
+  } finally {
+    checkBtn.disabled = false;
+    checkBtn.textContent = "Проверить";
+  }
+}
+
 function toggleGroup(key) {
   const idx = state.collapsed.indexOf(key);
   if (idx === -1) {
@@ -414,6 +522,8 @@ excClearBtn.addEventListener("click", async () => {
   await save();
   renderExceptions();
 });
+
+checkBtn.addEventListener("click", runCheck);
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
