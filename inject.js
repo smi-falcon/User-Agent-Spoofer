@@ -11,13 +11,18 @@
   const hostname = window.location.hostname;
   if (matches(hostname, TURNSTILE_HOSTS)) return;
 
-  const define = (proto, prop, value) => {
+  const define = (target, prop, value) => {
     try {
-      Object.defineProperty(proto, prop, {
+      Object.defineProperty(target, prop, {
         get: () => value,
         configurable: true
       });
     } catch (e) {}
+  };
+
+  const defineChain = (proto, obj, prop, value) => {
+    define(proto, prop, value);
+    define(obj, prop, value);
   };
 
   const extractFullVersion = (ua) => {
@@ -60,15 +65,15 @@
     const ua = stored.customUA || (stored.preset && stored.preset.ua);
     if (!ua) return;
 
-    define(Navigator.prototype, "userAgent", ua);
-    define(Navigator.prototype, "appVersion", ua.replace(/^Mozilla\//, ""));
+    defineChain(Navigator.prototype, navigator, "userAgent", ua);
+    defineChain(Navigator.prototype, navigator, "appVersion", ua.replace(/^Mozilla\//, ""));
 
     const preset = stored.preset;
     if (!preset || !preset.hints) return;
 
     const platformRaw = (preset.hints["sec-ch-ua-platform"] || '""').replace(/"/g, "");
-    define(Navigator.prototype, "platform", platformRaw || "Win32");
-    define(Navigator.prototype, "vendor", "Google Inc.");
+    defineChain(Navigator.prototype, navigator, "platform", platformRaw || "Win32");
+    defineChain(Navigator.prototype, navigator, "vendor", "Google Inc.");
 
     let uaHeader = preset.hints["sec-ch-ua"] || "";
     const grease = stored.grease;
@@ -124,13 +129,13 @@
       toJSON: () => ({ brands, mobile, platform: platformRaw })
     };
 
-    define(Navigator.prototype, "userAgentData", uaData);
+    defineChain(Navigator.prototype, navigator, "userAgentData", uaData);
 
     const legacy = buildLegacy(platform);
 
-    define(Window.prototype, "devicePixelRatio", legacy.dpr);
+    defineChain(Window.prototype, window, "devicePixelRatio", legacy.dpr);
 
-    define(Navigator.prototype, "deviceMemory", legacy.deviceMemory);
+    defineChain(Navigator.prototype, navigator, "deviceMemory", legacy.deviceMemory);
 
     const connection = {
       downlink: legacy.downlink,
@@ -143,10 +148,10 @@
       dispatchEvent: () => true
     };
 
-    define(Navigator.prototype, "connection", connection);
+    defineChain(Navigator.prototype, navigator, "connection", connection);
 
-    define(Screen.prototype, "colorDepth", 24);
-    define(Screen.prototype, "pixelDepth", 24);
+    defineChain(Screen.prototype, screen, "colorDepth", 24);
+    defineChain(Screen.prototype, screen, "pixelDepth", 24);
   };
 
   const consume = () => {
