@@ -62,27 +62,53 @@
     const mobile = preset.hints["sec-ch-ua-mobile"] === "?1";
     const platformVersion = (preset.hints["sec-ch-ua-platform-version"] || '""').replace(/"/g, "");
 
+    const platform = preset.platform || "";
+
+    const architecture = /iPhone|iPad|iPod|Android/i.test(platform) ? "arm" : "x86";
+    const bitness = /i686|i386/i.test(platform) ? "32" : "64";
+    const wow64 = /WOW64/i.test(platform);
+
+    const fullVersionPatterns = [
+      /YaBrowser\/([\d.]+)/,
+      /Vivaldi\/([\d.]+)/,
+      /OPR\/([\d.]+)/,
+      /EdgiOS\/([\d.]+)/,
+      /EdgA\/([\d.]+)/,
+      /Edg\/([\d.]+)/,
+      /CriOS\/([\d.]+)/,
+      /FxiOS\/([\d.]+)/,
+      /Firefox\/([\d.]+)/,
+      /Version\/([\d.]+)/,
+      /Chrome\/([\d.]+)/
+    ];
+
+    let fullVersion = "";
+    for (const re2 of fullVersionPatterns) {
+      const mm = ua.match(re2);
+      if (mm) {
+        fullVersion = mm[1];
+        break;
+      }
+    }
+
+    const fullVersionList = brands.map((b) => ({
+      brand: b.brand,
+      version: b.brand.includes("Not") ? b.version : fullVersion
+    }));
+
     const uaData = {
       brands,
       mobile,
       platform: platformRaw,
       getHighEntropyValues: (hints) => {
         const out = { brands, mobile, platform: platformRaw };
-        if (hints.includes("architecture")) out.architecture = "x86";
-        if (hints.includes("bitness")) out.bitness = "64";
+        if (hints.includes("architecture")) out.architecture = architecture;
+        if (hints.includes("bitness")) out.bitness = bitness;
         if (hints.includes("model")) out.model = "";
         if (hints.includes("platformVersion")) out.platformVersion = platformVersion;
-        if (hints.includes("uaFullVersion")) {
-          const main = brands.find((b) => !b.brand.includes("Not")) || brands[0];
-          out.uaFullVersion = main ? main.version + ".0.0.0" : "";
-        }
-        if (hints.includes("fullVersionList")) {
-          out.fullVersionList = brands.map((b) => ({
-            brand: b.brand,
-            version: b.version + ".0.0.0"
-          }));
-        }
-        if (hints.includes("wow64")) out.wow64 = false;
+        if (hints.includes("uaFullVersion")) out.uaFullVersion = fullVersion;
+        if (hints.includes("fullVersionList")) out.fullVersionList = fullVersionList;
+        if (hints.includes("wow64")) out.wow64 = wow64;
         return Promise.resolve(out);
       },
       toJSON: () => ({ brands, mobile, platform: platformRaw })

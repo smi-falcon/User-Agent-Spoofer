@@ -5,9 +5,15 @@ const RESOURCE_TYPES = [
   "media", "other"
 ];
 const CH_HEADERS = [
-  "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
-  "sec-ch-ua-platform-version", "sec-ch-ua-full-version-list",
-  "sec-ch-ua-arch", "sec-ch-ua-bitness", "sec-ch-ua-model",
+  "sec-ch-ua",
+  "sec-ch-ua-mobile",
+  "sec-ch-ua-platform",
+  "sec-ch-ua-platform-version",
+  "sec-ch-ua-full-version",
+  "sec-ch-ua-full-version-list",
+  "sec-ch-ua-arch",
+  "sec-ch-ua-bitness",
+  "sec-ch-ua-model",
   "sec-ch-ua-wow64"
 ];
 
@@ -62,6 +68,42 @@ async function regenerateGrease() {
   return next;
 }
 
+function extractFullVersion(ua) {
+  if (!ua) return "";
+  const patterns = [
+    /YaBrowser\/([\d.]+)/,
+    /Vivaldi\/([\d.]+)/,
+    /OPR\/([\d.]+)/,
+    /EdgiOS\/([\d.]+)/,
+    /EdgA\/([\d.]+)/,
+    /Edg\/([\d.]+)/,
+    /CriOS\/([\d.]+)/,
+    /FxiOS\/([\d.]+)/,
+    /Firefox\/([\d.]+)/,
+    /Version\/([\d.]+)/,
+    /Chrome\/([\d.]+)/
+  ];
+  for (const re of patterns) {
+    const m = ua.match(re);
+    if (m) return m[1];
+  }
+  return "";
+}
+
+function buildFullVersionList(uaHeader, fullVersion) {
+  if (!uaHeader) return "";
+  const parts = [];
+  const re = /"([^"]+)";v="([^"]+)"/g;
+  let m;
+  while ((m = re.exec(uaHeader)) !== null) {
+    const brand = m[1];
+    const isGrease = brand.includes("Not");
+    const version = isGrease ? m[2] : fullVersion;
+    parts.push(`"${brand}";v="${version}"`);
+  }
+  return parts.join(", ");
+}
+
 async function loadExcludedDomains() {
   const stored = await chrome.storage.local.get(["excludedDomains"]);
   userExcludedDomains = Array.isArray(stored.excludedDomains) ? stored.excludedDomains : [];
@@ -92,13 +134,39 @@ async function applyRules() {
     }
   } else if (preset) {
     requestHeaders.push({ header: "user-agent", operation: "set", value: preset.ua });
+
     if (preset.hints) {
+      let greaseApplied = null;
       for (const [name, value] of Object.entries(preset.hints)) {
         const finalValue = name === "sec-ch-ua" ? applyGrease(value, grease) : value;
+        if (name === "sec-ch-ua") greaseApplied = finalValue;
         requestHeaders.push({ header: name, operation: "set", value: finalValue });
       }
+
+      const fullVersion = extractFullVersion(preset.ua);
+      if (fullVersion) {
+        requestHeaders.push({
+          header: "sec-ch-ua-full-version",
+          operation: "set",
+          value: `"${fullVersion}"`
+        });
+        const fvl = buildFullVersionList(greaseApplied, fullVersion);
+        if (fvl) {
+          requestHeaders.push({
+            header: "sec-ch-ua-full-version-list",
+            operation: "set",
+            value: fvl
+          });
+        }
+      }
+
+      const dynamicHeaders = new Set([
+        "sec-ch-ua-full-version",
+        "sec-ch-ua-full-version-list"
+      ]);
+
       for (const h of CH_HEADERS) {
-        if (!(h in preset.hints)) {
+        if (!(h in preset.hints) && !dynamicHeaders.has(h)) {
           requestHeaders.push({ header: h, operation: "remove" });
         }
       }
