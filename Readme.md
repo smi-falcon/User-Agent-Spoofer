@@ -6,6 +6,7 @@
 
 Расширение для браузера, подменяющее User-Agent и Client Hints на выбранный профиль.
 
+![Version](https://img.shields.io/badge/Version-1.6.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)
 ![Chromium](https://img.shields.io/badge/Chromium-✓-4ade80)
 ![License](https://img.shields.io/badge/License-MIT-8b8b9a)
@@ -28,7 +29,11 @@
 
 - **Готовые профили:** Chrome, Mozilla Firefox, Safari, Internet Explorer, Microsoft Edge, Opera, Vivaldi Browser, Yandex Browser.
 - **Все платформы:** Windows, macOS, Linux, iOS, Android.
-- **Подмена на двух уровнях:** HTTP-заголовки и JavaScript-свойства `navigator`.
+- **Подмена на двух уровнях:** Сетевые HTTP-заголовки и JavaScript-свойства `navigator`.
+- **Полная поддержка Client Hints:** все современные заголовки `Sec-CH-UA-*`, включая `Full-Version-List`, `Arch`, `Bitness`, `WoW64`, `Model`, `Form-Factors`.
+- **Legacy Client Hints:** подмена `DPR`, `Device-Memory`, `Downlink`, `ECT`, `RTT`; удаление `Viewport-Width` и `Save-Data`.
+- **GREASE-рандомизация:** в `Sec-CH-UA` добавляется случайный несуществующий бренд, который меняется при каждом запуске браузера. Это имитирует поведение настоящего Chrome.
+- **Встроенная проверка:** вкладка **Проверка** отправляет тестовый запрос и показывает, какие заголовки совпадают, а какие утекают.
 - **Список исключений** для сайтов с капчей Cloudflare Turnstile и для любых других доменов по вашему выбору.
 - **Свой User-Agent** - ввод произвольной строки.
 - **Светлая и тёмная темы.**
@@ -58,6 +63,8 @@ git clone https://github.com/smi-falcon/User-Agent-Spoofer.git
 
 На вкладке **Исключения** добавьте домен сайта, на котором Cloudflare Turnstile при прохождении капчи вызывает ошибку или зацикливается. После этого подмена для этого домена и его поддоменов полностью отключается.
 
+На вкладке **Проверка** нажмите кнопку **Проверить** - расширение отправит тестовый запрос на httpbin.org, получит список отправленных заголовков и сравнит их с выбранным профилем. Отчёт содержит статусы для каждого заголовка: совпадает, расхождение, отсутствует или утечка. Утечка - это заголовок, который не должен отправляться для выбранного профиля, но всё же пришёл на сервер. Для профилей без Client Hints (Firefox, Safari, Internet Explorer) проверка покажет только user-agent - это корректное поведение, потому что данные браузеры Client Hints не поддерживают.
+
 ## Структура:
 
 ```
@@ -65,11 +72,13 @@ User-Agent-Spoofer/
 ├── manifest.json
 ├── background.js
 ├── content.js
+├── inject.js
 ├── presets.js
 ├── popup.html
 ├── popup.css
 ├── popup.js
 ├── Readme.md
+├── Changelog.md
 ├── License
 └── icons/
     ├── icon16.png
@@ -84,19 +93,24 @@ User-Agent-Spoofer/
 
 | Уровень | Файл | Что меняется |
 |---|---|---|
-| Сетевой | `background.js` | HTTP-заголовки `User-Agent` и `sec-ch-ua-*` |
-| JavaScript | `content.js` | `navigator.userAgent`, `navigator.platform`, `navigator.userAgentData` |
+| Сетевой | `background.js` | HTTP-заголовки `User-Agent`, `sec-ch-ua-*`, `sec-ch-prefers-*`, `legacy hints` |
+| Передача данных | `content.js` | Читает настройки из `chrome.storage` и передаёт их в контекст страницы |
+| Контекст страницы | `inject.js` | Переопределяет `navigator.*`, `window.devicePixelRatio`, `screen.*`, `Intl` |
 
 Правила задаются через `declarativeNetRequest` - это надёжнее и быстрее, чем перехват через `XMLHttpRequest` или `fetch`, и не требует разрешения на чтение содержимого страниц.
+
+Подмена JavaScript-свойств выполняется в контексте самой страницы, а не внутри изолированного окружения расширения. Content scripts по умолчанию работают в отдельной песочнице и не могут переопределять глобальные объекты, которые видит сайт.
 
 ## Ограничения:
 
 - ⚠️ **Cloudflare Turnstile.** Расширение меняет `User-Agent`, но не может изменить TLS-отпечаток (JA3/JA4), HTTP/2-отпечаток и поведенческие сигналы. На сайтах с защитой Cloudflare это может вызывать ошибки и зацикливание капчи. Решение - использовать механизм исключений в самом расширении или отдельный прокси (Byparr, Solverr).
 - ⚠️ **Не для анонимности.** Подмена не скрывает ваш IP, cookies, TLS-отпечаток и поведение. Это подмена идентификатора клиента, а не режим невидимки.
-- 🔒 **Только Chromium.** Расширение написано под Manifest V3 и работает в браузерах на движке Chromium. Firefox требует портирования.
+- ⚠️ **Accept-CH и Critical-CH.** Manifest V3 не позволяет расширению читать заголовки ответов сервера, поэтому динамически реагировать на Accept-CH или Critical-CH невозможно. Расширение обходит это ограничение через preemptive-отправку всех Client Hints.
+- ⚠️ **ACCEPT_CH ALPS TLS extension.** Расширение не может вмешиваться в TLS-рукопожатие. Однако preemptive-отправка хинтов делает ALPS-механизм ненужным.
+- ⚠️ **Только Chromium.** Расширение написано под Manifest V3 и работает в браузерах на движке Chromium. Firefox требует портирования.
 
-## ⭐ Поддержка проекта:
+## Поддержка проекта:
 Если вам понравился данный проект, поставьте ему звезду на GitHub.
 
-## 📄 Лицензия:
+## Лицензия:
 - [MIT License](https://github.com/smi-falcon/User-Agent-Spoofer/blob/main/License.md)
