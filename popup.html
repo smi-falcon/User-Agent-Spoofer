@@ -9,9 +9,9 @@
       <header class="header">
         <div class="header-text">
           <h1>User-Agent Spoofer</h1>
-          <p id="status">Отключено</p>
+          <p id="status" data-i18n="statusDisabled">Отключено</p>
         </div>
-        <button class="icon-btn" id="theme-btn" title="Сменить тему">
+        <button class="icon-btn" id="theme-btn" data-i18n-title="themeTooltip" title="Сменить тему">
           <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="4" />
             <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
@@ -20,6 +20,7 @@
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
           </svg>
         </button>
+        <button class="icon-btn lang-btn" id="lang-btn" data-i18n-title="langTooltip" title="Сменить язык">RU</button>
         <label class="switch">
           <input type="checkbox" id="toggle" />
           <span class="slider"></span>
@@ -27,35 +28,35 @@
       </header>
 
       <nav class="tabs">
-        <button class="tab active" data-tab="profiles">Профили</button>
-        <button class="tab" data-tab="exceptions">Исключения</button>
-        <button class="tab" data-tab="check">Проверка</button>
+        <button class="tab active" data-tab="profiles" data-i18n="tabProfiles">Профили</button>
+        <button class="tab" data-tab="exceptions" data-i18n="tabExceptions">Исключения</button>
+        <button class="tab" data-tab="check" data-i18n="tabCheck">Проверка</button>
       </nav>
 
       <section class="panel panel-profiles active" id="panel-profiles">
         <div class="list" id="list"></div>
         <footer class="footer">
-          <button id="custom-btn">Свой User-Agent</button>
+          <button id="custom-btn" data-i18n="customBtn">Свой User-Agent</button>
         </footer>
       </section>
 
       <section class="panel panel-exceptions" id="panel-exceptions">
         <div class="exc-add">
-          <input type="text" id="exc-input" placeholder="example.com" />
-          <button id="exc-add-btn">Добавить</button>
+          <input type="text" id="exc-input" data-i18n-placeholder="excPlaceholder" placeholder="example.com" />
+          <button id="exc-add-btn" data-i18n="excAddBtn">Добавить</button>
         </div>
         <div class="list" id="exc-list"></div>
         <footer class="footer">
-          <button id="exc-clear-btn">Очистить всё</button>
+          <button id="exc-clear-btn" data-i18n="excClearBtn">Очистить всё</button>
         </footer>
       </section>
 
       <section class="panel panel-check" id="panel-check">
         <div class="list" id="check-list">
-          <div class="empty" id="check-empty">Нажмите «Проверить» для анализа заголовков</div>
+          <div class="empty" id="check-empty" data-i18n="checkEmpty">Нажмите «Проверить» для анализа заголовков</div>
         </div>
         <footer class="footer">
-          <button id="check-btn">Проверить</button>
+          <button id="check-btn" data-i18n="checkBtn">Проверить</button>
         </footer>
       </section>
     </div>

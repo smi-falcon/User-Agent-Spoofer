@@ -96,6 +96,9 @@ body {
   font-size: 11px;
   color: var(--text-secondary);
   transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .icon-btn {
@@ -136,6 +139,16 @@ body {
 
 [data-theme="light"] .icon-btn .icon-moon {
   display: block;
+}
+
+.lang-btn {
+  width: auto;
+  min-width: 26px;
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 }
 
 .switch {
@@ -272,6 +285,14 @@ body {
   background: var(--card);
 }
 
+.group.has-active > .group-header {
+  background: var(--accent-soft);
+}
+
+.group.has-active > .group-header .group-title {
+  color: var(--accent);
+}
+
 .group-chevron {
   width: 10px;
   height: 10px;
@@ -302,6 +323,13 @@ body {
 
 [data-theme="light"] .group-count {
   background: #f0f0f5;
+}
+
+.group-active-check {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  color: var(--accent);
 }
 
 .group-items {

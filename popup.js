@@ -3,6 +3,7 @@ const toggleEl = document.getElementById("toggle");
 const statusEl = document.getElementById("status");
 const customBtn = document.getElementById("custom-btn");
 const themeBtn = document.getElementById("theme-btn");
+const langBtn = document.getElementById("lang-btn");
 const footerEl = document.querySelector(".panel-profiles .footer");
 
 const tabs = document.querySelectorAll(".tab");
@@ -20,10 +21,79 @@ const excClearBtn = document.getElementById("exc-clear-btn");
 const checkListEl = document.getElementById("check-list");
 const checkBtn = document.getElementById("check-btn");
 
+const I18N = {
+  ru: {
+    statusDisabled: "Отключено",
+    statusNoProfile: "Выберите профиль",
+    statusActive: "Активно",
+    tabProfiles: "Профили",
+    tabExceptions: "Исключения",
+    tabCheck: "Проверка",
+    customBtn: "Свой User-Agent",
+    customGroupTitle: "Свой User-Agent",
+    customInputPlaceholder: "Введите User-Agent…",
+    themeTooltip: "Сменить тему",
+    langTooltip: "Сменить язык",
+    excPlaceholder: "example.com",
+    excAddBtn: "Добавить",
+    excClearBtn: "Очистить всё",
+    excEmpty: "Список пуст",
+    excRemove: "Удалить",
+    checkEmpty: "Нажмите «Проверить» для анализа заголовков",
+    checkBtn: "Проверить",
+    checkBtnLoading: "Проверка…",
+    checkLoading: "Запрос к httpbin.org…",
+    checkDisabled: "Расширение отключено",
+    checkNetwork: "Не удалось выполнить запрос",
+    checkStatusPrefix: "Ошибка сервера: ",
+    checkNoData: "Нет данных",
+    checkMatch: "Совпадает",
+    checkMismatch: "Расхождение",
+    checkMissing: "Отсутствует",
+    checkLeak: "Утечка",
+    checkFact: "факт:",
+    checkNotSent: "не отправлен",
+    checkLeakLabel: "утечка:"
+  },
+  en: {
+    statusDisabled: "Disabled",
+    statusNoProfile: "Select a profile",
+    statusActive: "Active",
+    tabProfiles: "Profiles",
+    tabExceptions: "Exceptions",
+    tabCheck: "Check",
+    customBtn: "Custom User-Agent",
+    customGroupTitle: "Custom User-Agent",
+    customInputPlaceholder: "Enter User-Agent…",
+    themeTooltip: "Toggle theme",
+    langTooltip: "Switch language",
+    excPlaceholder: "example.com",
+    excAddBtn: "Add",
+    excClearBtn: "Clear all",
+    excEmpty: "List is empty",
+    excRemove: "Remove",
+    checkEmpty: "Click «Check» to analyze headers",
+    checkBtn: "Check",
+    checkBtnLoading: "Checking…",
+    checkLoading: "Requesting httpbin.org…",
+    checkDisabled: "Extension disabled",
+    checkNetwork: "Request failed",
+    checkStatusPrefix: "Server error: ",
+    checkNoData: "No data",
+    checkMatch: "Match",
+    checkMismatch: "Mismatch",
+    checkMissing: "Missing",
+    checkLeak: "Leak",
+    checkFact: "actual:",
+    checkNotSent: "not sent",
+    checkLeakLabel: "leak:"
+  }
+};
+
 const BROWSER_LABELS = {
-  Chrome: "Chrome",
+  Chrome: "Google Chrome",
   Firefox: "Mozilla Firefox",
-  Safari: "Safari",
+  Safari: "Apple Safari",
   "Internet Explorer": "Internet Explorer",
   Edge: "Microsoft Edge",
   Opera: "Opera",
@@ -33,14 +103,41 @@ const BROWSER_LABELS = {
 
 const LS_KEY = "ua-spoofer-cache";
 
+let lastCheckResult = null;
+let currentLang = "ru";
+
 let state = {
   enabled: false,
   preset: null,
   customUA: null,
   collapsed: [],
   theme: "dark",
+  lang: "ru",
   excludedDomains: []
 };
+
+function t(key) {
+  const dict = I18N[currentLang] || I18N.ru;
+  return dict[key] || key;
+}
+
+function detectDefaultLang() {
+  const nav = (navigator.language || "en").toLowerCase();
+  return nav.startsWith("ru") ? "ru" : "en";
+}
+
+function applyTranslations() {
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+}
 
 function presetKey(p) {
   if (!p) return null;
@@ -87,6 +184,7 @@ function lsSave() {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({
       theme: state.theme,
+      lang: state.lang,
       collapsed: state.collapsed,
       enabled: state.enabled,
       presetKey: presetKey(state.preset),
@@ -104,16 +202,16 @@ function activeUA() {
 
 function updateStatus() {
   if (!state.enabled) {
-    statusEl.textContent = "Отключено";
+    statusEl.textContent = t("statusDisabled");
     statusEl.style.color = "";
     return;
   }
   if (!activeUA()) {
-    statusEl.textContent = "Выберите профиль";
+    statusEl.textContent = t("statusNoProfile");
     statusEl.style.color = "";
     return;
   }
-  statusEl.textContent = "Активно";
+  statusEl.textContent = t("statusActive");
   statusEl.style.color = "var(--success)";
 }
 
@@ -155,16 +253,21 @@ function renderProfiles() {
     groups.get(p.browser).push(p);
   });
 
+  const activeKey = presetKey(state.preset);
+  const customActive = !!state.customUA;
+
   if (state.customUA) {
     const groupEl = document.createElement("div");
     groupEl.className = "group";
     if (state.collapsed.includes("__custom__")) groupEl.classList.add("collapsed");
+    if (customActive) groupEl.classList.add("has-active");
 
     const headerEl = document.createElement("div");
     headerEl.className = "group-header";
     headerEl.innerHTML = `
       <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-      <span class="group-title">Свой User-Agent</span>
+      <span class="group-title">${escapeHtml(t("customGroupTitle"))}</span>
+      ${customActive ? `<svg class="group-active-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
     `;
     headerEl.addEventListener("click", () => toggleGroup("__custom__"));
     groupEl.appendChild(headerEl);
@@ -189,12 +292,13 @@ function renderProfiles() {
     listEl.appendChild(groupEl);
   }
 
-  const activeKey = presetKey(state.preset);
-
   groups.forEach((items, browser) => {
     const groupEl = document.createElement("div");
     groupEl.className = "group";
     if (state.collapsed.includes(browser)) groupEl.classList.add("collapsed");
+
+    const hasActive = !customActive && activeKey && items.some((p) => presetKey(p) === activeKey);
+    if (hasActive) groupEl.classList.add("has-active");
 
     const label = BROWSER_LABELS[browser] || browser;
 
@@ -204,6 +308,7 @@ function renderProfiles() {
       <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       <span class="group-title">${escapeHtml(label)}</span>
       <span class="group-count">${items.length}</span>
+      ${hasActive ? `<svg class="group-active-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
     `;
     headerEl.addEventListener("click", () => toggleGroup(browser));
     groupEl.appendChild(headerEl);
@@ -253,7 +358,7 @@ function renderExceptions() {
   if (!state.excludedDomains.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = "Список пуст";
+    empty.textContent = t("excEmpty");
     excListEl.appendChild(empty);
     return;
   }
@@ -270,7 +375,7 @@ function renderExceptions() {
 
     const removeBtn = document.createElement("button");
     removeBtn.className = "exc-remove";
-    removeBtn.title = "Удалить";
+    removeBtn.title = t("excRemove");
     removeBtn.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18" />
@@ -290,19 +395,20 @@ function renderExceptions() {
 }
 
 function renderCheck(result) {
+  lastCheckResult = result;
   checkListEl.innerHTML = "";
 
   if (!result || !result.ok) {
     const empty = document.createElement("div");
     empty.className = "empty";
     if (result && result.reason === "disabled") {
-      empty.textContent = "Расширение отключено";
+      empty.textContent = t("checkDisabled");
     } else if (result && result.reason === "network") {
-      empty.textContent = "Не удалось выполнить запрос";
+      empty.textContent = t("checkNetwork");
     } else if (result && result.reason === "status") {
-      empty.textContent = "Ошибка сервера: " + result.status;
+      empty.textContent = t("checkStatusPrefix") + result.status;
     } else {
-      empty.textContent = "Нет данных";
+      empty.textContent = t("checkEmpty");
     }
     checkListEl.appendChild(empty);
     return;
@@ -314,25 +420,25 @@ function renderCheck(result) {
   const s = result.summary;
   const matchBadge = document.createElement("span");
   matchBadge.className = "check-badge ok";
-  matchBadge.textContent = "Совпадает: " + s.match;
+  matchBadge.textContent = t("checkMatch") + ": " + s.match;
   summaryEl.appendChild(matchBadge);
 
   if (s.mismatch) {
     const b = document.createElement("span");
     b.className = "check-badge err";
-    b.textContent = "Расхождение: " + s.mismatch;
+    b.textContent = t("checkMismatch") + ": " + s.mismatch;
     summaryEl.appendChild(b);
   }
   if (s.missing) {
     const b = document.createElement("span");
     b.className = "check-badge warn";
-    b.textContent = "Отсутствует: " + s.missing;
+    b.textContent = t("checkMissing") + ": " + s.missing;
     summaryEl.appendChild(b);
   }
   if (s.leak) {
     const b = document.createElement("span");
     b.className = "check-badge err";
-    b.textContent = "Утечка: " + s.leak;
+    b.textContent = t("checkLeak") + ": " + s.leak;
     summaryEl.appendChild(b);
   }
 
@@ -360,11 +466,11 @@ function renderCheck(result) {
     valuesEl.className = "check-values";
 
     if (row.status === "missing") {
-      valuesEl.innerHTML = `<span class="label">не отправлен</span>`;
+      valuesEl.innerHTML = `<span class="label">${escapeHtml(t("checkNotSent"))}</span>`;
     } else if (row.status === "leak") {
-      valuesEl.innerHTML = `<span class="label">утечка:</span> <span class="val-danger">${escapeHtml(row.actual || "")}</span>`;
+      valuesEl.innerHTML = `<span class="label">${escapeHtml(t("checkLeakLabel"))}</span> <span class="val-danger">${escapeHtml(row.actual || "")}</span>`;
     } else {
-      valuesEl.innerHTML = `<span class="label">факт:</span> ${escapeHtml(row.actual || "")}`;
+      valuesEl.innerHTML = `<span class="label">${escapeHtml(t("checkFact"))}</span> ${escapeHtml(row.actual || "")}`;
     }
 
     rowEl.appendChild(valuesEl);
@@ -374,12 +480,12 @@ function renderCheck(result) {
 
 async function runCheck() {
   checkBtn.disabled = true;
-  checkBtn.textContent = "Проверка…";
+  checkBtn.textContent = t("checkBtnLoading");
   checkListEl.innerHTML = "";
 
   const loadingEl = document.createElement("div");
   loadingEl.className = "empty";
-  loadingEl.textContent = "Запрос к httpbin.org…";
+  loadingEl.textContent = t("checkLoading");
   checkListEl.appendChild(loadingEl);
 
   try {
@@ -389,7 +495,7 @@ async function runCheck() {
     renderCheck({ ok: false, reason: "network" });
   } finally {
     checkBtn.disabled = false;
-    checkBtn.textContent = "Проверить";
+    checkBtn.textContent = t("checkBtn");
   }
 }
 
@@ -414,8 +520,27 @@ async function save() {
     customUA: state.customUA,
     collapsed: state.collapsed,
     theme: state.theme,
+    lang: state.lang,
     excludedDomains: state.excludedDomains
   });
+}
+
+function applyLang() {
+  currentLang = state.lang;
+  langBtn.textContent = currentLang.toUpperCase();
+  applyTranslations();
+  updateStatus();
+  renderProfiles();
+  renderExceptions();
+  if (lastCheckResult) {
+    renderCheck(lastCheckResult);
+  } else {
+    checkListEl.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = t("checkEmpty");
+    checkListEl.appendChild(empty);
+  }
 }
 
 toggleEl.addEventListener("change", () => {
@@ -427,6 +552,12 @@ toggleEl.addEventListener("change", () => {
 themeBtn.addEventListener("click", () => {
   state.theme = state.theme === "dark" ? "light" : "dark";
   applyTheme();
+  save();
+});
+
+langBtn.addEventListener("click", () => {
+  state.lang = state.lang === "ru" ? "en" : "ru";
+  applyLang();
   save();
 });
 
@@ -448,7 +579,7 @@ customBtn.addEventListener("click", () => {
   const input = document.createElement("textarea");
   input.className = "custom-input";
   input.rows = 2;
-  input.placeholder = "Введите User-Agent…";
+  input.placeholder = t("customInputPlaceholder");
   input.value = state.customUA || "";
   footerEl.appendChild(input);
   input.focus();
@@ -548,6 +679,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (cached.theme === "light" || cached.theme === "dark") {
     state.theme = cached.theme;
   }
+  state.lang = cached.lang === "ru" || cached.lang === "en"
+    ? cached.lang
+    : detectDefaultLang();
   state.collapsed = Array.isArray(cached.collapsed) && cached.collapsed.length
     ? cached.collapsed
     : defaultCollapsed();
@@ -560,15 +694,22 @@ chrome.storage.onChanged.addListener((changes, area) => {
     ? cached.excludedDomains
     : [];
 
+  currentLang = state.lang;
+  langBtn.textContent = currentLang.toUpperCase();
+
   applyTheme();
+  applyTranslations();
   toggleEl.checked = state.enabled;
   renderProfiles();
   renderExceptions();
 
   chrome.storage.local.get([
-    "enabled", "presetKey", "presetUA", "customUA", "collapsed", "theme", "excludedDomains"
+    "enabled", "presetKey", "presetUA", "customUA", "collapsed", "theme", "lang", "excludedDomains"
   ]).then((stored) => {
     const nextTheme = stored.theme === "light" ? "light" : "dark";
+    const nextLang = stored.lang === "ru" || stored.lang === "en"
+      ? stored.lang
+      : state.lang;
     const nextCollapsed = Array.isArray(stored.collapsed) && stored.collapsed.length
       ? stored.collapsed
       : defaultCollapsed();
@@ -586,6 +727,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
       customUA: stored.customUA || null,
       collapsed: nextCollapsed,
       theme: nextTheme,
+      lang: nextLang,
       excludedDomains: Array.isArray(stored.excludedDomains) ? stored.excludedDomains : []
     };
 
@@ -594,6 +736,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
       presetKey(nextState.preset) !== presetKey(state.preset) ||
       nextState.customUA !== state.customUA ||
       nextState.theme !== state.theme ||
+      nextState.lang !== state.lang ||
       nextState.excludedDomains.length !== state.excludedDomains.length ||
       nextState.collapsed.length !== state.collapsed.length;
 
@@ -601,7 +744,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
     lsSave();
 
     if (changed) {
+      currentLang = state.lang;
+      langBtn.textContent = currentLang.toUpperCase();
       applyTheme();
+      applyTranslations();
       toggleEl.checked = state.enabled;
       renderProfiles();
       renderExceptions();
