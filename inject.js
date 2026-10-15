@@ -61,6 +61,34 @@
     return { dpr: 1, deviceMemory: 8, downlink: 10, ect: "4g", rtt: 50 };
   };
 
+  const buildNavigatorExtras = (platform) => {
+    if (/iPhone|iPad|iPod/i.test(platform)) {
+      return {
+        hardwareConcurrency: 4,
+        maxTouchPoints: 5,
+        languages: ["en-US", "en"],
+        availWidth: 390,
+        availHeight: 844
+      };
+    }
+    if (/Android/i.test(platform)) {
+      return {
+        hardwareConcurrency: 8,
+        maxTouchPoints: 5,
+        languages: ["en-US", "en"],
+        availWidth: 412,
+        availHeight: 915
+      };
+    }
+    return {
+      hardwareConcurrency: 8,
+      maxTouchPoints: 0,
+      languages: ["en-US", "en"],
+      availWidth: 1920,
+      availHeight: 1040
+    };
+  };
+
   const apply = (stored) => {
     if (!stored || !stored.enabled) return;
 
@@ -158,6 +186,16 @@
 
     defineChain(Screen.prototype, screen, "colorDepth", 24);
     defineChain(Screen.prototype, screen, "pixelDepth", 24);
+
+    const extras = buildNavigatorExtras(platform);
+
+    defineChain(Navigator.prototype, navigator, "hardwareConcurrency", extras.hardwareConcurrency);
+    defineChain(Navigator.prototype, navigator, "maxTouchPoints", extras.maxTouchPoints);
+    defineChain(Navigator.prototype, navigator, "languages", extras.languages);
+    defineChain(Navigator.prototype, navigator, "language", extras.languages[0]);
+
+    defineChain(Screen.prototype, screen, "availWidth", extras.availWidth);
+    defineChain(Screen.prototype, screen, "availHeight", extras.availHeight);
   };
 
   const consume = () => {
