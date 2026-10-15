@@ -151,6 +151,13 @@ function buildWow64(preset) {
   return /WOW64/i.test(platform) ? "?1" : "?0";
 }
 
+function buildModel(preset) {
+  const platform = preset.platform || "";
+  const m = platform.match(/Android\s*\(([^)]+)\)/);
+  if (m) return `"${m[1]}"`;
+  return '""';
+}
+
 function buildLegacyHints(preset) {
   const platform = preset.platform || "";
   if (/iPhone|iPad|iPod/i.test(platform)) {
@@ -265,6 +272,11 @@ async function applyRules() {
         operation: "set",
         value: buildFormFactors(preset)
       });
+      requestHeaders.push({
+        header: "sec-ch-ua-model",
+        operation: "set",
+        value: buildModel(preset)
+      });
 
       const dynamicHeaders = new Set([
         "sec-ch-ua-full-version",
@@ -272,7 +284,8 @@ async function applyRules() {
         "sec-ch-ua-arch",
         "sec-ch-ua-bitness",
         "sec-ch-ua-wow64",
-        "sec-ch-ua-form-factors"
+        "sec-ch-ua-form-factors",
+        "sec-ch-ua-model"
       ]);
 
       for (const h of CH_HEADERS) {
@@ -374,7 +387,6 @@ async function checkHeaders() {
   };
 
   const expected = {};
-  const legacyNames = new Set(LEGACY_HINT_HEADERS);
 
   if (state.customUA) {
     expected["user-agent"] = state.customUA;
@@ -393,7 +405,6 @@ async function checkHeaders() {
       const fullVersion = extractFullVersion(preset.ua);
       if (fullVersion) {
         expected["sec-ch-ua-full-version"] = `"${fullVersion}"`;
-
         const fvl = buildFullVersionList(greaseApplied, fullVersion);
         if (fvl) {
           expected["sec-ch-ua-full-version-list"] = fvl;
@@ -404,6 +415,7 @@ async function checkHeaders() {
       expected["sec-ch-ua-bitness"] = buildBitness(preset);
       expected["sec-ch-ua-wow64"] = buildWow64(preset);
       expected["sec-ch-ua-form-factors"] = buildFormFactors(preset);
+      expected["sec-ch-ua-model"] = buildModel(preset);
 
       const legacy = buildLegacyHints(preset);
       for (const [name, value] of Object.entries(legacy)) {

@@ -46,6 +46,11 @@
     return "";
   };
 
+  const buildModel = (platform) => {
+    const m = platform.match(/Android\s*\(([^)]+)\)/);
+    return m ? m[1] : "";
+  };
+
   const buildLegacy = (platform) => {
     if (/iPhone|iPad|iPod/i.test(platform)) {
       return { dpr: 3, deviceMemory: 4, downlink: 10, ect: "4g", rtt: 100 };
@@ -98,6 +103,7 @@
     const architecture = /iPhone|iPad|iPod|Android/i.test(platform) ? "arm" : "x86";
     const bitness = /i686|i386/i.test(platform) ? "32" : "64";
     const wow64 = /WOW64/i.test(platform);
+    const model = buildModel(platform);
 
     const formFactors = /iPhone|iPad|iPod|Android/i.test(platform)
       ? ["Desktop", "Mobile"]
@@ -118,7 +124,7 @@
         const out = { brands, mobile, platform: platformRaw };
         if (hints.includes("architecture")) out.architecture = architecture;
         if (hints.includes("bitness")) out.bitness = bitness;
-        if (hints.includes("model")) out.model = "";
+        if (hints.includes("model")) out.model = model;
         if (hints.includes("platformVersion")) out.platformVersion = platformVersion;
         if (hints.includes("uaFullVersion")) out.uaFullVersion = fullVersion;
         if (hints.includes("fullVersionList")) out.fullVersionList = fullVersionList;
