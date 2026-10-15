@@ -5,6 +5,9 @@
     "cloudflareinsights.com"
   ];
 
+  const LOCALE = "en-US";
+  const LANGUAGES = ["en-US", "en"];
+
   const matches = (h, list) =>
     list.some((d) => h === d || h.endsWith("." + d));
 
@@ -66,7 +69,6 @@
       return {
         hardwareConcurrency: 4,
         maxTouchPoints: 5,
-        languages: ["en-US", "en"],
         availWidth: 390,
         availHeight: 844
       };
@@ -75,7 +77,6 @@
       return {
         hardwareConcurrency: 8,
         maxTouchPoints: 5,
-        languages: ["en-US", "en"],
         availWidth: 412,
         availHeight: 915
       };
@@ -83,10 +84,35 @@
     return {
       hardwareConcurrency: 8,
       maxTouchPoints: 0,
-      languages: ["en-US", "en"],
       availWidth: 1920,
       availHeight: 1040
     };
+  };
+
+  const applyIntlLocale = () => {
+    if (typeof Intl === "undefined") return;
+    const wrap = (Ctor) => {
+      if (!Ctor || !Ctor.prototype) return;
+      const proto = Ctor.prototype;
+      const original = proto.resolvedOptions;
+      if (typeof original !== "function") return;
+      try {
+        Object.defineProperty(proto, "resolvedOptions", {
+          value: function () {
+            const opts = original.call(this);
+            return Object.assign({}, opts, { locale: LOCALE });
+          },
+          configurable: true,
+          writable: true
+        });
+      } catch (e) {}
+    };
+    wrap(Intl.DateTimeFormat);
+    wrap(Intl.NumberFormat);
+    wrap(Intl.Collator);
+    wrap(Intl.RelativeTimeFormat);
+    wrap(Intl.PluralRules);
+    wrap(Intl.ListFormat);
   };
 
   const apply = (stored) => {
@@ -102,7 +128,23 @@
     defineChain(Navigator.prototype, navigator, "appVersion", ua.replace(/^Mozilla\//, ""));
 
     const preset = stored.preset;
-    if (!preset || !preset.hints) return;
+    if (!preset) return;
+
+    const platform = preset.platform || "";
+
+    const extras = buildNavigatorExtras(platform);
+
+    defineChain(Navigator.prototype, navigator, "hardwareConcurrency", extras.hardwareConcurrency);
+    defineChain(Navigator.prototype, navigator, "maxTouchPoints", extras.maxTouchPoints);
+    defineChain(Navigator.prototype, navigator, "languages", LANGUAGES);
+    defineChain(Navigator.prototype, navigator, "language", LOCALE);
+
+    defineChain(Screen.prototype, screen, "availWidth", extras.availWidth);
+    defineChain(Screen.prototype, screen, "availHeight", extras.availHeight);
+
+    applyIntlLocale();
+
+    if (!preset.hints) return;
 
     const platformRaw = (preset.hints["sec-ch-ua-platform"] || '""').replace(/"/g, "");
     defineChain(Navigator.prototype, navigator, "platform", platformRaw || "Win32");
@@ -126,7 +168,6 @@
 
     const mobile = preset.hints["sec-ch-ua-mobile"] === "?1";
     const platformVersion = (preset.hints["sec-ch-ua-platform-version"] || '""').replace(/"/g, "");
-    const platform = preset.platform || "";
 
     const architecture = /iPhone|iPad|iPod|Android/i.test(platform) ? "arm" : "x86";
     const bitness = /i686|i386/i.test(platform) ? "32" : "64";
@@ -186,16 +227,6 @@
 
     defineChain(Screen.prototype, screen, "colorDepth", 24);
     defineChain(Screen.prototype, screen, "pixelDepth", 24);
-
-    const extras = buildNavigatorExtras(platform);
-
-    defineChain(Navigator.prototype, navigator, "hardwareConcurrency", extras.hardwareConcurrency);
-    defineChain(Navigator.prototype, navigator, "maxTouchPoints", extras.maxTouchPoints);
-    defineChain(Navigator.prototype, navigator, "languages", extras.languages);
-    defineChain(Navigator.prototype, navigator, "language", extras.languages[0]);
-
-    defineChain(Screen.prototype, screen, "availWidth", extras.availWidth);
-    defineChain(Screen.prototype, screen, "availHeight", extras.availHeight);
   };
 
   const consume = () => {
