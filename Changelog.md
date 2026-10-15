@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.7.0] - 2026-10-15
+
+### Added
+
+- RU/EN language switcher between the theme button and the enable toggle.
+- Central i18n dictionary in `popup.js` covering all popup strings.
+- Group header is highlighted with the accent color when it contains the active profile.
+- A checkmark is shown on group headers with the active profile.
+- Language is detected from `navigator.language` on first launch and persisted in `chrome.storage.local` and `localStorage`.
+
+### Changed
+
+- Status line shows only the Active/Disabled state, without the profile name.
+- Minor text adjustments.
+
 ## [1.6.0] - 2026-10-15
 
 ### Added
