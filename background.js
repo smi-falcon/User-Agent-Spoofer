@@ -275,7 +275,7 @@ async function applyRules() {
 }
 
 async function checkHeaders() {
-  const state = await chrome.storage.local.get(["enabled", "preset", "customUA"]);
+  const state = await chrome.storage.local.get(["enabled", "preset", "customUA", "__grease"]);
   if (!state.enabled) {
     return { ok: false, reason: "disabled" };
   }
@@ -312,24 +312,42 @@ async function checkHeaders() {
   };
 
   const expected = {};
+  const dynamicHeaders = new Set();
 
   if (state.customUA) {
     expected["user-agent"] = state.customUA;
   } else if (state.preset) {
     const preset = state.preset;
+    const grease = state.__grease;
     expected["user-agent"] = preset.ua;
     if (preset.hints) {
+      let greaseApplied = null;
       for (const [name, value] of Object.entries(preset.hints)) {
-        expected[name] = value;
+        const finalValue = name === "sec-ch-ua" ? applyGrease(value, grease) : value;
+        if (name === "sec-ch-ua") greaseApplied = finalValue;
+        expected[name] = finalValue;
       }
+
       const fullVersion = extractFullVersion(preset.ua);
       if (fullVersion) {
         expected["sec-ch-ua-full-version"] = `"${fullVersion}"`;
+        dynamicHeaders.add("sec-ch-ua-full-version");
+
+        const fvl = buildFullVersionList(greaseApplied, fullVersion);
+        if (fvl) {
+          expected["sec-ch-ua-full-version-list"] = fvl;
+          dynamicHeaders.add("sec-ch-ua-full-version-list");
+        }
       }
+
       expected["sec-ch-ua-arch"] = buildArch(preset);
       expected["sec-ch-ua-bitness"] = buildBitness(preset);
       expected["sec-ch-ua-wow64"] = buildWow64(preset);
       expected["sec-ch-ua-form-factors"] = buildFormFactors(preset);
+      dynamicHeaders.add("sec-ch-ua-arch");
+      dynamicHeaders.add("sec-ch-ua-bitness");
+      dynamicHeaders.add("sec-ch-ua-wow64");
+      dynamicHeaders.add("sec-ch-ua-form-factors");
     }
   }
 
