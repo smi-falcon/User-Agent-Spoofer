@@ -25,6 +25,19 @@ const PREFERENCE_HEADERS = [
   "sec-ch-prefers-contrast"
 ];
 
+const LEGACY_HINT_HEADERS = [
+  "dpr",
+  "device-memory",
+  "downlink",
+  "ect",
+  "rtt"
+];
+
+const LEGACY_REMOVE_HEADERS = [
+  "viewport-width",
+  "save-data"
+];
+
 const TURNSTILE_HOSTS = [
   "challenges.cloudflare.com",
   "cloudflarechallenge.com",
@@ -138,6 +151,35 @@ function buildWow64(preset) {
   return /WOW64/i.test(platform) ? "?1" : "?0";
 }
 
+function buildLegacyHints(preset) {
+  const platform = preset.platform || "";
+  if (/iPhone|iPad|iPod/i.test(platform)) {
+    return {
+      dpr: "3",
+      "device-memory": "4",
+      downlink: "10",
+      ect: "4g",
+      rtt: "100"
+    };
+  }
+  if (/Android/i.test(platform)) {
+    return {
+      dpr: "2.625",
+      "device-memory": "4",
+      downlink: "10",
+      ect: "4g",
+      rtt: "100"
+    };
+  }
+  return {
+    dpr: "1",
+    "device-memory": "8",
+    downlink: "10",
+    ect: "4g",
+    rtt: "50"
+  };
+}
+
 async function loadExcludedDomains() {
   const stored = await chrome.storage.local.get(["excludedDomains"]);
   userExcludedDomains = Array.isArray(stored.excludedDomains) ? stored.excludedDomains : [];
@@ -168,6 +210,12 @@ async function applyRules() {
     }
     for (const h of PREFERENCE_HEADERS) {
       requestHeaders.push({ header: h, operation: "set", value: h === "sec-ch-prefers-color-scheme" ? "dark" : "no-preference" });
+    }
+    for (const h of LEGACY_HINT_HEADERS) {
+      requestHeaders.push({ header: h, operation: "remove" });
+    }
+    for (const h of LEGACY_REMOVE_HEADERS) {
+      requestHeaders.push({ header: h, operation: "remove" });
     }
   } else if (preset) {
     requestHeaders.push({ header: "user-agent", operation: "set", value: preset.ua });
@@ -240,11 +288,25 @@ async function applyRules() {
           value: h === "sec-ch-prefers-color-scheme" ? "dark" : "no-preference"
         });
       }
+
+      const legacy = buildLegacyHints(preset);
+      for (const [name, value] of Object.entries(legacy)) {
+        requestHeaders.push({ header: name, operation: "set", value });
+      }
+      for (const h of LEGACY_REMOVE_HEADERS) {
+        requestHeaders.push({ header: h, operation: "remove" });
+      }
     } else {
       for (const h of CH_HEADERS) {
         requestHeaders.push({ header: h, operation: "remove" });
       }
       for (const h of PREFERENCE_HEADERS) {
+        requestHeaders.push({ header: h, operation: "remove" });
+      }
+      for (const h of LEGACY_HINT_HEADERS) {
+        requestHeaders.push({ header: h, operation: "remove" });
+      }
+      for (const h of LEGACY_REMOVE_HEADERS) {
         requestHeaders.push({ header: h, operation: "remove" });
       }
     }
@@ -312,7 +374,7 @@ async function checkHeaders() {
   };
 
   const expected = {};
-  const dynamicHeaders = new Set();
+  const legacyNames = new Set(LEGACY_HINT_HEADERS);
 
   if (state.customUA) {
     expected["user-agent"] = state.customUA;
@@ -331,12 +393,10 @@ async function checkHeaders() {
       const fullVersion = extractFullVersion(preset.ua);
       if (fullVersion) {
         expected["sec-ch-ua-full-version"] = `"${fullVersion}"`;
-        dynamicHeaders.add("sec-ch-ua-full-version");
 
         const fvl = buildFullVersionList(greaseApplied, fullVersion);
         if (fvl) {
           expected["sec-ch-ua-full-version-list"] = fvl;
-          dynamicHeaders.add("sec-ch-ua-full-version-list");
         }
       }
 
@@ -344,10 +404,11 @@ async function checkHeaders() {
       expected["sec-ch-ua-bitness"] = buildBitness(preset);
       expected["sec-ch-ua-wow64"] = buildWow64(preset);
       expected["sec-ch-ua-form-factors"] = buildFormFactors(preset);
-      dynamicHeaders.add("sec-ch-ua-arch");
-      dynamicHeaders.add("sec-ch-ua-bitness");
-      dynamicHeaders.add("sec-ch-ua-wow64");
-      dynamicHeaders.add("sec-ch-ua-form-factors");
+
+      const legacy = buildLegacyHints(preset);
+      for (const [name, value] of Object.entries(legacy)) {
+        expected[name] = value;
+      }
     }
   }
 
@@ -377,6 +438,19 @@ async function checkHeaders() {
   }
 
   for (const h of CH_HEADERS) {
+    if (h in expected) continue;
+    const actual = pick(h);
+    if (actual !== null && state.preset && state.preset.hints) {
+      report.push({
+        name: h,
+        expected: null,
+        actual,
+        status: "leak"
+      });
+    }
+  }
+
+  for (const h of LEGACY_HINT_HEADERS) {
     if (h in expected) continue;
     const actual = pick(h);
     if (actual !== null && state.preset && state.preset.hints) {
