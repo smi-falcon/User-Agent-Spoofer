@@ -486,6 +486,18 @@ body {
   color: var(--accent);
 }
 
+.item.blocked {
+  cursor: not-allowed;
+}
+
+.item.blocked:hover {
+  background: transparent;
+}
+
+.item.blocked.active:hover {
+  background: var(--accent-soft);
+}
+
 .footer {
   padding: 8px 12px 10px;
   border-top: 1px solid var(--border);

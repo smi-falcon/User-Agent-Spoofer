@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.4] - 2026-10-16
+
+### Changed
+
+- Profile items are not clickable while the extension is enabled. To switch profiles, the toggle must be turned off first.
+- Clicking the active profile no longer disables the extension. The only way to disable is via the toggle itself.
+- The Custom User-Agent item and the footer button are also blocked when the extension is enabled.
+- Blocked items show a not-allowed cursor and lose the hover highlight.
+
 ## [1.8.3] - 2026-10-16
 
 ### Changed

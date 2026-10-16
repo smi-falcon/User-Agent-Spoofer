@@ -290,6 +290,7 @@ function renderProfiles() {
 
   const activeKey = presetKey(state.preset);
   const customActive = !!state.customUA;
+  const blocked = state.enabled;
 
   if (state.customUA) {
     const groupEl = document.createElement("div");
@@ -312,11 +313,13 @@ function renderProfiles() {
 
     const itemEl = document.createElement("div");
     itemEl.className = "item active";
+    if (blocked) itemEl.classList.add("blocked");
     itemEl.innerHTML = `
       <span class="item-name item-custom">${escapeHtml(state.customUA)}</span>
       <svg class="item-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     `;
     itemEl.addEventListener("click", () => {
+      if (state.enabled) return;
       state.customUA = null;
       enforceProfileRule();
       save();
@@ -359,6 +362,12 @@ function renderProfiles() {
       if (isItemActive) {
         itemEl.classList.add("active");
       }
+      if (blocked && !isItemActive) {
+        itemEl.classList.add("blocked");
+      }
+      if (blocked && isItemActive) {
+        itemEl.classList.add("blocked");
+      }
 
       const version = extractVersion(preset);
       const osSvg = osIcon(preset.platform);
@@ -377,6 +386,7 @@ function renderProfiles() {
       `;
 
       itemEl.addEventListener("click", () => {
+        if (state.enabled) return;
         if (isItemActive) {
           state.preset = null;
         } else {
@@ -625,6 +635,7 @@ tabs.forEach((tab) => {
 });
 
 customBtn.addEventListener("click", () => {
+  if (state.enabled) return;
   if (footerEl.querySelector(".custom-input")) return;
 
   customBtn.style.display = "none";

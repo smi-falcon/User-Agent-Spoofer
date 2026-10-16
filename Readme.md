@@ -6,7 +6,7 @@
 
 Расширение для браузера, подменяющее User-Agent и Client Hints на выбранный профиль.
 
-![Version](https://img.shields.io/badge/Version-1.8.3-7c6cff)
+![Version](https://img.shields.io/badge/Version-1.8.4-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)
 ![Chromium](https://img.shields.io/badge/Chromium-✓-4ade80)
 ![License](https://img.shields.io/badge/License-MIT-8b8b9a)
