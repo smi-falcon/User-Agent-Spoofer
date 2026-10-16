@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-10-16
+
+### Added
+
+- Spoofing of the `Accept-Language` HTTP header via `declarativeNetRequest`.
+- "Custom Accept-Language" button in the Profiles footer, below "Custom User-Agent".
+- Language picker overlay with a scrollable list of 107 locales covering Europe, America, and Asia.
+- `en-US` (English (United States)) is pinned to the top of the list as the default.
+- Language picker is blocked when the extension toggle is enabled, matching profile item behavior.
+- Selected locale is used for `navigator.language`, `navigator.languages`, and `Intl` locale in `inject.js`.
+- Language preference is persisted in `chrome.storage.local` and `localStorage`.
+
+### Changed
+
+- `inject.js` no longer hardcodes `en-US`; it reads the selected locale from storage.
+
+### Fixed
+
+- The "Custom User-Agent" footer button now also shows a disabled state when the extension is enabled.
+
+
 ## [1.8.4] - 2026-10-16
 
 ### Changed

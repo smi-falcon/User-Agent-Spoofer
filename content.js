@@ -1,6 +1,6 @@
 (async () => {
   const stored = await chrome.storage.local.get([
-    "enabled", "preset", "customUA", "excludedDomains", "__grease"
+    "enabled", "preset", "customUA", "excludedDomains", "__grease", "acceptLanguage"
   ]);
 
   const el = document.documentElement;
@@ -11,7 +11,8 @@
     preset: stored.preset || null,
     customUA: stored.customUA || null,
     excludedDomains: Array.isArray(stored.excludedDomains) ? stored.excludedDomains : [],
-    grease: stored.__grease || null
+    grease: stored.__grease || null,
+    acceptLanguage: stored.acceptLanguage || "en-US"
   });
 
   el.dispatchEvent(new Event("ua-spoof-ready"));

@@ -187,18 +187,26 @@ function buildLegacyHints(preset) {
   };
 }
 
+function buildAcceptLanguage(lang) {
+  const code = lang || "en-US";
+  if (code === "en-US") return "en-US,en";
+  const short = code.split("-")[0];
+  return `${code},${short},en-US;q=0.9,en;q=0.8`;
+}
+
 async function loadExcludedDomains() {
   const stored = await chrome.storage.local.get(["excludedDomains"]);
   userExcludedDomains = Array.isArray(stored.excludedDomains) ? stored.excludedDomains : [];
 }
 
 async function applyRules() {
-  const state = await chrome.storage.local.get(["enabled", "preset", "customUA"]);
+  const state = await chrome.storage.local.get(["enabled", "preset", "customUA", "acceptLanguage"]);
   const existing = await chrome.declarativeNetRequest.getDynamicRules();
   const removeRuleIds = existing.map((r) => r.id);
 
   const preset = state.enabled ? state.preset : null;
   const customUA = state.enabled ? state.customUA : null;
+  const acceptLanguage = state.enabled ? (state.acceptLanguage || "en-US") : null;
 
   if (!preset && !customUA) {
     if (removeRuleIds.length) {
@@ -209,6 +217,12 @@ async function applyRules() {
 
   const grease = await getGrease();
   const requestHeaders = [];
+
+  requestHeaders.push({
+    header: "accept-language",
+    operation: "set",
+    value: buildAcceptLanguage(acceptLanguage)
+  });
 
   if (customUA) {
     requestHeaders.push({ header: "user-agent", operation: "set", value: customUA });
@@ -518,7 +532,13 @@ chrome.runtime.onStartup.addListener(() => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
-  if (changes.enabled || changes.preset || changes.customUA || changes.excludedDomains) {
+  if (
+    changes.enabled ||
+    changes.preset ||
+    changes.customUA ||
+    changes.acceptLanguage ||
+    changes.excludedDomains
+  ) {
     sync();
   }
 });

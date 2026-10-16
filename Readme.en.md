@@ -6,7 +6,7 @@
 
 A browser extension that spoofs User-Agent and Client Hints to a selected profile.
 
-![Version](https://img.shields.io/badge/Version-1.8.4-7c6cff)
+![Version](https://img.shields.io/badge/Version-1.9.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)
 ![Chromium](https://img.shields.io/badge/Chromium-✓-4ade80)
 ![License](https://img.shields.io/badge/License-MIT-8b8b9a)
@@ -35,6 +35,7 @@ A browser extension that spoofs User-Agent and Client Hints to a selected profil
 - **Full Client Hints support:** all modern `Sec-CH-UA-*` headers, including `Full-Version-List`, `Arch`, `Bitness`, `WoW64`, `Model`, `Form-Factors`.
 - **Legacy Client Hints:** spoofed `DPR`, `Device-Memory`, `Downlink`, `ECT`, `RTT`; removed `Viewport-Width` and `Save-Data`.
 - **GREASE randomization:** a random non-existent brand is added to `Sec-CH-UA` and regenerated on every browser start. This mimics the behavior of a real Chrome browser.
+- **Accept-Language spoofing:** choose one of 107 locales to match the IP region and prevent language leaks when using a virtual private network.
 - **Built-in check:** the **Check** tab sends a test request and shows which headers match and which leak.
 - **Exception list** for Cloudflare Turnstile captcha sites and any other domains of your choice.
 - **Custom User-Agent** - arbitrary string input.
@@ -103,6 +104,14 @@ The extension applies spoofing at **two levels**:
 Rules are configured through `declarativeNetRequest` - this is more reliable and faster than intercepting via `XMLHttpRequest` or `fetch`, and it does not require permission to read page content.
 
 JavaScript property spoofing is performed in the page context itself, not inside the isolated environment of the extension. Content scripts by default run in a separate sandbox and cannot override the global objects that the site sees.
+
+## About Accept-Language:
+
+By default, the browser sends the `Accept-Language` header with the languages configured in the system. When using a virtual private network, the IP address and language may not match. This mismatch is a visible signal for anti-bot systems and trackers, because real users almost always have an IP and language from the same region.
+
+The extension lets you choose `Accept-Language` manually. The list includes 107 locales from Europe, America, and Asia. The language is spoofed simultaneously in the HTTP header and in JavaScript (`navigator.language`, `navigator.languages`, `Intl` locale), so there is no discrepancy between the network and JS.
+
+**Recommendation:** choose the language that matches the exit node country. Then checks that compare the language region with the IP region will show consistency.
 
 ## Limitations:
 

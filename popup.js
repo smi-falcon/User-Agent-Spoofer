@@ -4,6 +4,8 @@ const statusEl = document.getElementById("status");
 const customBtn = document.getElementById("custom-btn");
 const themeBtn = document.getElementById("theme-btn");
 const langBtn = document.getElementById("lang-btn");
+const langSelectBtn = document.getElementById("lang-select-btn");
+const langDropdown = document.getElementById("lang-dropdown");
 const versionEl = document.getElementById("version");
 const footerEl = document.querySelector(".panel-profiles .footer");
 
@@ -33,6 +35,7 @@ const I18N = {
     customBtn: "Свой User-Agent",
     customGroupTitle: "Свой User-Agent",
     customInputPlaceholder: "Введите User-Agent…",
+    langSelectBtn: "Свой Accept-Language",
     themeTooltip: "Сменить тему",
     langTooltip: "Сменить язык",
     excPlaceholder: "example.com",
@@ -66,6 +69,7 @@ const I18N = {
     customBtn: "Custom User-Agent",
     customGroupTitle: "Custom User-Agent",
     customInputPlaceholder: "Enter User-Agent…",
+    langSelectBtn: "Custom Accept-Language",
     themeTooltip: "Toggle theme",
     langTooltip: "Switch language",
     excPlaceholder: "example.com",
@@ -110,6 +114,116 @@ const OS_ICONS = {
   Android: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 6.5v5c0 .8.7 1.5 1.5 1.5h.5v2c0 .5.4 1 1 1s1-.5 1-1v-2h1v2c0 .5.4 1 1 1s1-.5 1-1v-2h.5c.8 0 1.5-.7 1.5-1.5v-5H4zM3 6.5c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1s1-.4 1-1v-3c0-.6-.4-1-1-1zM13 6.5c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1s1-.4 1-1v-3c0-.6-.4-1-1-1zM5.6 3l-.7-1.2c-.1-.1 0-.2.1-.2.1 0 .2 0 .2.1L6 3c.6-.3 1.3-.4 2-.4s1.4.1 2 .4l.8-1.3c0-.1.2-.1.2-.1.1 0 .2.1.1.2L10.4 3c1.8 1 3 2.7 3 4.5H2.6c0-1.8 1.2-3.5 3-4.5z"/></svg>'
 };
 
+const LANGUAGES = [
+  { code: "en-US", nameEn: "English (United States)", nameRu: "Английский (США)" },
+  { code: "af-ZA", nameEn: "Afrikaans (South Africa)", nameRu: "Африкаанс (ЮАР)" },
+  { code: "ar-AE", nameEn: "Arabic (United Arab Emirates)", nameRu: "Арабский (ОАЭ)" },
+  { code: "ar-DZ", nameEn: "Arabic (Algeria)", nameRu: "Арабский (Алжир)" },
+  { code: "ar-EG", nameEn: "Arabic (Egypt)", nameRu: "Арабский (Египет)" },
+  { code: "ar-IQ", nameEn: "Arabic (Iraq)", nameRu: "Арабский (Ирак)" },
+  { code: "ar-JO", nameEn: "Arabic (Jordan)", nameRu: "Арабский (Иордания)" },
+  { code: "ar-KW", nameEn: "Arabic (Kuwait)", nameRu: "Арабский (Кувейт)" },
+  { code: "ar-LB", nameEn: "Arabic (Lebanon)", nameRu: "Арабский (Ливан)" },
+  { code: "ar-MA", nameEn: "Arabic (Morocco)", nameRu: "Арабский (Марокко)" },
+  { code: "ar-OM", nameEn: "Arabic (Oman)", nameRu: "Арабский (Оман)" },
+  { code: "ar-QA", nameEn: "Arabic (Qatar)", nameRu: "Арабский (Катар)" },
+  { code: "ar-SA", nameEn: "Arabic (Saudi Arabia)", nameRu: "Арабский (Саудовская Аравия)" },
+  { code: "ar-SY", nameEn: "Arabic (Syria)", nameRu: "Арабский (Сирия)" },
+  { code: "ar-TN", nameEn: "Arabic (Tunisia)", nameRu: "Арабский (Тунис)" },
+  { code: "ar-YE", nameEn: "Arabic (Yemen)", nameRu: "Арабский (Йемен)" },
+  { code: "az-AZ", nameEn: "Azerbaijani (Azerbaijan)", nameRu: "Азербайджанский (Азербайджан)" },
+  { code: "be-BY", nameEn: "Belarusian (Belarus)", nameRu: "Белорусский (Беларусь)" },
+  { code: "bg-BG", nameEn: "Bulgarian (Bulgaria)", nameRu: "Болгарский (Болгария)" },
+  { code: "bn-BD", nameEn: "Bengali (Bangladesh)", nameRu: "Бенгальский (Бангладеш)" },
+  { code: "bn-IN", nameEn: "Bengali (India)", nameRu: "Бенгальский (Индия)" },
+  { code: "ca-ES", nameEn: "Catalan (Spain)", nameRu: "Каталанский (Испания)" },
+  { code: "cs-CZ", nameEn: "Czech (Czechia)", nameRu: "Чешский (Чехия)" },
+  { code: "cy-GB", nameEn: "Welsh (United Kingdom)", nameRu: "Валлийский (Великобритания)" },
+  { code: "da-DK", nameEn: "Danish (Denmark)", nameRu: "Датский (Дания)" },
+  { code: "de-AT", nameEn: "German (Austria)", nameRu: "Немецкий (Австрия)" },
+  { code: "de-CH", nameEn: "German (Switzerland)", nameRu: "Немецкий (Швейцария)" },
+  { code: "de-DE", nameEn: "German (Germany)", nameRu: "Немецкий (Германия)" },
+  { code: "el-GR", nameEn: "Greek (Greece)", nameRu: "Греческий (Греция)" },
+  { code: "en-AU", nameEn: "English (Australia)", nameRu: "Английский (Австралия)" },
+  { code: "en-CA", nameEn: "English (Canada)", nameRu: "Английский (Канада)" },
+  { code: "en-GB", nameEn: "English (United Kingdom)", nameRu: "Английский (Великобритания)" },
+  { code: "en-IE", nameEn: "English (Ireland)", nameRu: "Английский (Ирландия)" },
+  { code: "en-IN", nameEn: "English (India)", nameRu: "Английский (Индия)" },
+  { code: "en-NG", nameEn: "English (Nigeria)", nameRu: "Английский (Нигерия)" },
+  { code: "en-NZ", nameEn: "English (New Zealand)", nameRu: "Английский (Новая Зеландия)" },
+  { code: "en-PH", nameEn: "English (Philippines)", nameRu: "Английский (Филиппины)" },
+  { code: "en-SG", nameEn: "English (Singapore)", nameRu: "Английский (Сингапур)" },
+  { code: "en-ZA", nameEn: "English (South Africa)", nameRu: "Английский (ЮАР)" },
+  { code: "es-AR", nameEn: "Spanish (Argentina)", nameRu: "Испанский (Аргентина)" },
+  { code: "es-CL", nameEn: "Spanish (Chile)", nameRu: "Испанский (Чили)" },
+  { code: "es-CO", nameEn: "Spanish (Colombia)", nameRu: "Испанский (Колумбия)" },
+  { code: "es-ES", nameEn: "Spanish (Spain)", nameRu: "Испанский (Испания)" },
+  { code: "es-MX", nameEn: "Spanish (Mexico)", nameRu: "Испанский (Мексика)" },
+  { code: "es-PE", nameEn: "Spanish (Peru)", nameRu: "Испанский (Перу)" },
+  { code: "es-US", nameEn: "Spanish (United States)", nameRu: "Испанский (США)" },
+  { code: "es-VE", nameEn: "Spanish (Venezuela)", nameRu: "Испанский (Венесуэла)" },
+  { code: "et-EE", nameEn: "Estonian (Estonia)", nameRu: "Эстонский (Эстония)" },
+  { code: "eu-ES", nameEn: "Basque (Spain)", nameRu: "Баскский (Испания)" },
+  { code: "fa-IR", nameEn: "Persian (Iran)", nameRu: "Персидский (Иран)" },
+  { code: "fi-FI", nameEn: "Finnish (Finland)", nameRu: "Финский (Финляндия)" },
+  { code: "fil-PH", nameEn: "Filipino (Philippines)", nameRu: "Филиппинский (Филиппины)" },
+  { code: "fr-BE", nameEn: "French (Belgium)", nameRu: "Французский (Бельгия)" },
+  { code: "fr-CA", nameEn: "French (Canada)", nameRu: "Французский (Канада)" },
+  { code: "fr-CH", nameEn: "French (Switzerland)", nameRu: "Французский (Швейцария)" },
+  { code: "fr-FR", nameEn: "French (France)", nameRu: "Французский (Франция)" },
+  { code: "ga-IE", nameEn: "Irish (Ireland)", nameRu: "Ирландский (Ирландия)" },
+  { code: "gl-ES", nameEn: "Galician (Spain)", nameRu: "Галисийский (Испания)" },
+  { code: "he-IL", nameEn: "Hebrew (Israel)", nameRu: "Иврит (Израиль)" },
+  { code: "hi-IN", nameEn: "Hindi (India)", nameRu: "Хинди (Индия)" },
+  { code: "hr-HR", nameEn: "Croatian (Croatia)", nameRu: "Хорватский (Хорватия)" },
+  { code: "hu-HU", nameEn: "Hungarian (Hungary)", nameRu: "Венгерский (Венгрия)" },
+  { code: "hy-AM", nameEn: "Armenian (Armenia)", nameRu: "Армянский (Армения)" },
+  { code: "id-ID", nameEn: "Indonesian (Indonesia)", nameRu: "Индонезийский (Индонезия)" },
+  { code: "is-IS", nameEn: "Icelandic (Iceland)", nameRu: "Исландский (Исландия)" },
+  { code: "it-CH", nameEn: "Italian (Switzerland)", nameRu: "Итальянский (Швейцария)" },
+  { code: "it-IT", nameEn: "Italian (Italy)", nameRu: "Итальянский (Италия)" },
+  { code: "ja-JP", nameEn: "Japanese (Japan)", nameRu: "Японский (Япония)" },
+  { code: "ka-GE", nameEn: "Georgian (Georgia)", nameRu: "Грузинский (Грузия)" },
+  { code: "kk-KZ", nameEn: "Kazakh (Kazakhstan)", nameRu: "Казахский (Казахстан)" },
+  { code: "km-KH", nameEn: "Khmer (Cambodia)", nameRu: "Кхмерский (Камбоджа)" },
+  { code: "ko-KR", nameEn: "Korean (South Korea)", nameRu: "Корейский (Южная Корея)" },
+  { code: "lt-LT", nameEn: "Lithuanian (Lithuania)", nameRu: "Литовский (Литва)" },
+  { code: "lv-LV", nameEn: "Latvian (Latvia)", nameRu: "Латышский (Латвия)" },
+  { code: "mk-MK", nameEn: "Macedonian (North Macedonia)", nameRu: "Македонский (Северная Македония)" },
+  { code: "ml-IN", nameEn: "Malayalam (India)", nameRu: "Малаялам (Индия)" },
+  { code: "mr-IN", nameEn: "Marathi (India)", nameRu: "Маратхи (Индия)" },
+  { code: "ms-MY", nameEn: "Malay (Malaysia)", nameRu: "Малайский (Малайзия)" },
+  { code: "nb-NO", nameEn: "Norwegian Bokmål (Norway)", nameRu: "Норвежский (Норвегия)" },
+  { code: "ne-NP", nameEn: "Nepali (Nepal)", nameRu: "Непальский (Непал)" },
+  { code: "nl-BE", nameEn: "Dutch (Belgium)", nameRu: "Нидерландский (Бельгия)" },
+  { code: "nl-NL", nameEn: "Dutch (Netherlands)", nameRu: "Нидерландский (Нидерланды)" },
+  { code: "pa-IN", nameEn: "Punjabi (India)", nameRu: "Панджаби (Индия)" },
+  { code: "pl-PL", nameEn: "Polish (Poland)", nameRu: "Польский (Польша)" },
+  { code: "pt-BR", nameEn: "Portuguese (Brazil)", nameRu: "Португальский (Бразилия)" },
+  { code: "pt-PT", nameEn: "Portuguese (Portugal)", nameRu: "Португальский (Португалия)" },
+  { code: "ro-MD", nameEn: "Romanian (Moldova)", nameRu: "Румынский (Молдова)" },
+  { code: "ro-RO", nameEn: "Romanian (Romania)", nameRu: "Румынский (Румыния)" },
+  { code: "ru-RU", nameEn: "Russian (Russia)", nameRu: "Русский (Россия)" },
+  { code: "si-LK", nameEn: "Sinhala (Sri Lanka)", nameRu: "Сингальский (Шри-Ланка)" },
+  { code: "sk-SK", nameEn: "Slovak (Slovakia)", nameRu: "Словацкий (Словакия)" },
+  { code: "sl-SI", nameEn: "Slovenian (Slovenia)", nameRu: "Словенский (Словения)" },
+  { code: "sq-AL", nameEn: "Albanian (Albania)", nameRu: "Албанский (Албания)" },
+  { code: "sr-RS", nameEn: "Serbian (Serbia)", nameRu: "Сербский (Сербия)" },
+  { code: "sv-SE", nameEn: "Swedish (Sweden)", nameRu: "Шведский (Швеция)" },
+  { code: "ta-IN", nameEn: "Tamil (India)", nameRu: "Тамильский (Индия)" },
+  { code: "te-IN", nameEn: "Telugu (India)", nameRu: "Телугу (Индия)" },
+  { code: "th-TH", nameEn: "Thai (Thailand)", nameRu: "Тайский (Таиланд)" },
+  { code: "tr-TR", nameEn: "Turkish (Turkey)", nameRu: "Турецкий (Турция)" },
+  { code: "uk-UA", nameEn: "Ukrainian (Ukraine)", nameRu: "Украинский (Украина)" },
+  { code: "ur-PK", nameEn: "Urdu (Pakistan)", nameRu: "Урду (Пакистан)" },
+  { code: "uz-UZ", nameEn: "Uzbek (Uzbekistan)", nameRu: "Узбекский (Узбекистан)" },
+  { code: "vi-VN", nameEn: "Vietnamese (Vietnam)", nameRu: "Вьетнамский (Вьетнам)" },
+  { code: "zh-CN", nameEn: "Chinese (Simplified, China)", nameRu: "Китайский (упрощённый, Китай)" },
+  { code: "zh-HK", nameEn: "Chinese (Hong Kong)", nameRu: "Китайский (Гонконг)" },
+  { code: "zh-SG", nameEn: "Chinese (Singapore)", nameRu: "Китайский (Сингапур)" },
+  { code: "zh-TW", nameEn: "Chinese (Traditional, Taiwan)", nameRu: "Китайский (традиционный, Тайвань)" }
+];
+
 const LS_KEY = "ua-spoofer-cache";
 
 let lastCheckResult = null;
@@ -119,6 +233,7 @@ let state = {
   enabled: false,
   preset: null,
   customUA: null,
+  acceptLanguage: "en-US",
   collapsed: [],
   theme: "dark",
   lang: "ru",
@@ -152,6 +267,12 @@ function detectOS(platform) {
 function osIcon(platform) {
   const os = detectOS(platform);
   return os ? OS_ICONS[os] || "" : "";
+}
+
+function languageName(code) {
+  const found = LANGUAGES.find((l) => l.code === code);
+  if (!found) return code;
+  return currentLang === "ru" ? found.nameRu : found.nameEn;
 }
 
 function applyTranslations() {
@@ -217,6 +338,7 @@ function lsSave() {
       enabled: state.enabled,
       presetKey: presetKey(state.preset),
       customUA: state.customUA,
+      acceptLanguage: state.acceptLanguage,
       excludedDomains: state.excludedDomains
     }));
   } catch (e) {}
@@ -248,7 +370,7 @@ function applyTheme() {
 }
 
 function escapeHtml(str) {
-  return str
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -277,6 +399,51 @@ function enforceProfileRule() {
     state.enabled = false;
     toggleEl.checked = false;
   }
+}
+
+function renderLangSelect() {
+  langSelectBtn.textContent = languageName(state.acceptLanguage);
+  if (state.enabled) {
+    langSelectBtn.classList.add("blocked");
+  } else {
+    langSelectBtn.classList.remove("blocked");
+  }
+}
+
+function renderLangDropdown() {
+  langDropdown.innerHTML = "";
+  const sorted = LANGUAGES.slice().sort((a, b) => {
+    if (a.code === "en-US") return -1;
+    if (b.code === "en-US") return 1;
+    return a.code.localeCompare(b.code);
+  });
+
+  sorted.forEach((lang) => {
+    const opt = document.createElement("div");
+    opt.className = "lang-option";
+    if (lang.code === state.acceptLanguage) opt.classList.add("active");
+    opt.innerHTML = `
+      <span class="lang-option-name">${escapeHtml(languageName(lang.code))}</span>
+      <span class="lang-option-code">${escapeHtml(lang.code)}</span>
+    `;
+    opt.addEventListener("click", async () => {
+      state.acceptLanguage = lang.code;
+      await save();
+      renderLangSelect();
+      closeLangDropdown();
+    });
+    langDropdown.appendChild(opt);
+  });
+}
+
+function openLangDropdown() {
+  if (state.enabled) return;
+  renderLangDropdown();
+  langDropdown.hidden = false;
+}
+
+function closeLangDropdown() {
+  langDropdown.hidden = true;
 }
 
 function renderProfiles() {
@@ -362,10 +529,7 @@ function renderProfiles() {
       if (isItemActive) {
         itemEl.classList.add("active");
       }
-      if (blocked && !isItemActive) {
-        itemEl.classList.add("blocked");
-      }
-      if (blocked && isItemActive) {
+      if (blocked) {
         itemEl.classList.add("blocked");
       }
 
@@ -405,6 +569,7 @@ function renderProfiles() {
     listEl.appendChild(groupEl);
   });
 
+  renderLangSelect();
   updateStatus();
 }
 
@@ -574,6 +739,7 @@ async function save() {
     presetKey: presetKey(state.preset),
     presetUA: state.preset ? state.preset.ua : null,
     customUA: state.customUA,
+    acceptLanguage: state.acceptLanguage,
     collapsed: state.collapsed,
     theme: state.theme,
     lang: state.lang,
@@ -608,6 +774,7 @@ toggleEl.addEventListener("change", () => {
     return;
   }
   state.enabled = toggleEl.checked;
+  closeLangDropdown();
   save();
   renderProfiles();
 });
@@ -624,6 +791,28 @@ langBtn.addEventListener("click", () => {
   save();
 });
 
+langSelectBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (langDropdown.hidden) {
+    openLangDropdown();
+  } else {
+    closeLangDropdown();
+  }
+});
+
+document.addEventListener("click", (e) => {
+  if (langDropdown.hidden) return;
+  if (langDropdown.contains(e.target)) return;
+  if (langSelectBtn.contains(e.target)) return;
+  closeLangDropdown();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !langDropdown.hidden) {
+    closeLangDropdown();
+  }
+});
+
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     const target = tab.dataset.tab;
@@ -631,6 +820,7 @@ tabs.forEach((tab) => {
     Object.entries(panels).forEach(([name, el]) => {
       el.classList.toggle("active", name === target);
     });
+    closeLangDropdown();
   });
 });
 
@@ -645,7 +835,7 @@ customBtn.addEventListener("click", () => {
   input.rows = 2;
   input.placeholder = t("customInputPlaceholder");
   input.value = state.customUA || "";
-  footerEl.appendChild(input);
+  footerEl.insertBefore(input, langSelectBtn);
   input.focus();
   input.select();
 
@@ -755,6 +945,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
     ? PRESETS.find((p) => presetKey(p) === cached.presetKey) || null
     : null;
   state.customUA = cached.customUA || null;
+  state.acceptLanguage = cached.acceptLanguage && LANGUAGES.some((l) => l.code === cached.acceptLanguage)
+    ? cached.acceptLanguage
+    : "en-US";
   state.excludedDomains = Array.isArray(cached.excludedDomains)
     ? cached.excludedDomains
     : [];
@@ -771,7 +964,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   renderExceptions();
 
   chrome.storage.local.get([
-    "enabled", "presetKey", "presetUA", "customUA", "collapsed", "theme", "lang", "excludedDomains"
+    "enabled", "presetKey", "presetUA", "customUA", "acceptLanguage", "collapsed", "theme", "lang", "excludedDomains"
   ]).then((stored) => {
     const nextTheme = stored.theme === "light" ? "light" : "dark";
     const nextLang = stored.lang === "ru" || stored.lang === "en"
@@ -780,6 +973,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const nextCollapsed = Array.isArray(stored.collapsed) && stored.collapsed.length
       ? stored.collapsed
       : defaultCollapsed();
+
+    const nextAcceptLanguage = stored.acceptLanguage && LANGUAGES.some((l) => l.code === stored.acceptLanguage)
+      ? stored.acceptLanguage
+      : state.acceptLanguage;
 
     let nextPreset = null;
     if (stored.presetKey) {
@@ -799,6 +996,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
       enabled: nextEnabled,
       preset: nextPreset,
       customUA: nextCustom,
+      acceptLanguage: nextAcceptLanguage,
       collapsed: nextCollapsed,
       theme: nextTheme,
       lang: nextLang,
@@ -809,6 +1007,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
       nextState.enabled !== state.enabled ||
       presetKey(nextState.preset) !== presetKey(state.preset) ||
       nextState.customUA !== state.customUA ||
+      nextState.acceptLanguage !== state.acceptLanguage ||
       nextState.theme !== state.theme ||
       nextState.lang !== state.lang ||
       nextState.excludedDomains.length !== state.excludedDomains.length ||

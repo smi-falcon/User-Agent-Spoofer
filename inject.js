@@ -5,9 +5,6 @@
     "cloudflareinsights.com"
   ];
 
-  const LOCALE = "en-US";
-  const LANGUAGES = ["en-US", "en"];
-
   const matches = (h, list) =>
     list.some((d) => h === d || h.endsWith("." + d));
 
@@ -89,7 +86,14 @@
     };
   };
 
-  const applyIntlLocale = () => {
+  const buildLanguages = (locale) => {
+    const code = locale || "en-US";
+    if (code === "en-US") return ["en-US", "en"];
+    const short = code.split("-")[0];
+    return [code, short, "en-US", "en"];
+  };
+
+  const applyIntlLocale = (locale) => {
     if (typeof Intl === "undefined") return;
     const wrap = (Ctor) => {
       if (!Ctor || !Ctor.prototype) return;
@@ -100,7 +104,7 @@
         Object.defineProperty(proto, "resolvedOptions", {
           value: function () {
             const opts = original.call(this);
-            return Object.assign({}, opts, { locale: LOCALE });
+            return Object.assign({}, opts, { locale });
           },
           configurable: true,
           writable: true
@@ -124,11 +128,19 @@
     const ua = stored.customUA || (stored.preset && stored.preset.ua);
     if (!ua) return;
 
+    const locale = stored.acceptLanguage || "en-US";
+    const languages = buildLanguages(locale);
+
     defineChain(Navigator.prototype, navigator, "userAgent", ua);
     defineChain(Navigator.prototype, navigator, "appVersion", ua.replace(/^Mozilla\//, ""));
 
     const preset = stored.preset;
-    if (!preset) return;
+    if (!preset) {
+      defineChain(Navigator.prototype, navigator, "language", locale);
+      defineChain(Navigator.prototype, navigator, "languages", languages);
+      applyIntlLocale(locale);
+      return;
+    }
 
     const platform = preset.platform || "";
 
@@ -136,13 +148,13 @@
 
     defineChain(Navigator.prototype, navigator, "hardwareConcurrency", extras.hardwareConcurrency);
     defineChain(Navigator.prototype, navigator, "maxTouchPoints", extras.maxTouchPoints);
-    defineChain(Navigator.prototype, navigator, "languages", LANGUAGES);
-    defineChain(Navigator.prototype, navigator, "language", LOCALE);
+    defineChain(Navigator.prototype, navigator, "languages", languages);
+    defineChain(Navigator.prototype, navigator, "language", locale);
 
     defineChain(Screen.prototype, screen, "availWidth", extras.availWidth);
     defineChain(Screen.prototype, screen, "availHeight", extras.availHeight);
 
-    applyIntlLocale();
+    applyIntlLocale(locale);
 
     if (!preset.hints) return;
 
