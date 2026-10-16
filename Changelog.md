@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.2] - 2026-10-16
+
+### Fixed
+
+- Deselecting the active profile now turns the enable toggle off automatically.
+- Deselecting the custom User-Agent now turns the enable toggle off automatically.
+- Attempting to toggle on without a selected profile reverts to off.
+- Boot and storage sync reset the enabled state when no profile is present.
+
 ## [1.8.1] - 2026-10-16
 
 ### Fixed

@@ -130,6 +130,10 @@ function t(key) {
   return dict[key] || key;
 }
 
+function hasActiveProfile() {
+  return !!(state.preset || state.customUA);
+}
+
 function detectDefaultLang() {
   const nav = (navigator.language || "en").toLowerCase();
   return nav.startsWith("ru") ? "ru" : "en";
@@ -268,6 +272,13 @@ function defaultCollapsed() {
   return Array.from(new Set(keys));
 }
 
+function enforceProfileRule() {
+  if (!hasActiveProfile()) {
+    state.enabled = false;
+    toggleEl.checked = false;
+  }
+}
+
 function renderProfiles() {
   listEl.innerHTML = "";
 
@@ -307,6 +318,7 @@ function renderProfiles() {
     `;
     itemEl.addEventListener("click", () => {
       state.customUA = null;
+      enforceProfileRule();
       save();
       renderProfiles();
     });
@@ -371,6 +383,7 @@ function renderProfiles() {
           state.preset = preset;
           state.customUA = null;
         }
+        enforceProfileRule();
         save();
         renderProfiles();
       });
@@ -577,6 +590,13 @@ function applyLang() {
 }
 
 toggleEl.addEventListener("change", () => {
+  if (toggleEl.checked && !hasActiveProfile()) {
+    toggleEl.checked = false;
+    state.enabled = false;
+    save();
+    renderProfiles();
+    return;
+  }
   state.enabled = toggleEl.checked;
   if (!state.enabled) {
     state.preset = null;
@@ -732,7 +752,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
     ? cached.excludedDomains
     : [];
 
-  if (!state.enabled) {
+  if (!state.enabled || !hasActiveProfile()) {
+    state.enabled = false;
     state.preset = null;
     state.customUA = null;
   }
@@ -757,18 +778,20 @@ chrome.storage.onChanged.addListener((changes, area) => {
       ? stored.collapsed
       : defaultCollapsed();
 
-    const nextEnabled = !!stored.enabled;
+    let nextEnabled = !!stored.enabled;
 
     let nextPreset = null;
+    if (stored.presetKey) {
+      nextPreset = PRESETS.find((p) => presetKey(p) === stored.presetKey) || null;
+    } else if (stored.presetUA) {
+      nextPreset = PRESETS.find((p) => p.ua === stored.presetUA) || null;
+    }
+
     let nextCustom = stored.customUA || null;
 
-    if (nextEnabled) {
-      if (stored.presetKey) {
-        nextPreset = PRESETS.find((p) => presetKey(p) === stored.presetKey) || null;
-      } else if (stored.presetUA) {
-        nextPreset = PRESETS.find((p) => p.ua === stored.presetUA) || null;
-      }
-    } else {
+    if (!nextEnabled || (!nextPreset && !nextCustom)) {
+      nextEnabled = false;
+      nextPreset = null;
       nextCustom = null;
     }
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "User-Agent Spoofer",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Подменяет User-Agent и Client Hints браузера на выбранный профиль.",
   "author": "Falcon",
   "homepage_url": "https://github.com/smi-falcon/User-Agent-Spoofer",
