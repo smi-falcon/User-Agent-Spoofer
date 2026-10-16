@@ -306,7 +306,7 @@ function renderProfiles() {
       <svg class="item-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     `;
     itemEl.addEventListener("click", () => {
-      state.preset = null;
+      state.customUA = null;
       save();
       renderProfiles();
     });
@@ -343,7 +343,8 @@ function renderProfiles() {
     items.forEach((preset) => {
       const itemEl = document.createElement("div");
       itemEl.className = "item";
-      if (!state.customUA && activeKey && presetKey(preset) === activeKey) {
+      const isItemActive = !state.customUA && activeKey && presetKey(preset) === activeKey;
+      if (isItemActive) {
         itemEl.classList.add("active");
       }
 
@@ -364,10 +365,12 @@ function renderProfiles() {
       `;
 
       itemEl.addEventListener("click", () => {
-        state.preset = preset;
-        state.customUA = null;
-        state.enabled = true;
-        toggleEl.checked = true;
+        if (isItemActive) {
+          state.preset = null;
+        } else {
+          state.preset = preset;
+          state.customUA = null;
+        }
         save();
         renderProfiles();
       });
@@ -575,6 +578,10 @@ function applyLang() {
 
 toggleEl.addEventListener("change", () => {
   state.enabled = toggleEl.checked;
+  if (!state.enabled) {
+    state.preset = null;
+    state.customUA = null;
+  }
   save();
   renderProfiles();
 });
@@ -631,8 +638,6 @@ customBtn.addEventListener("click", () => {
     if (value) {
       state.customUA = value;
       state.preset = null;
-      state.enabled = true;
-      toggleEl.checked = true;
       await save();
     }
     input.remove();
@@ -727,6 +732,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
     ? cached.excludedDomains
     : [];
 
+  if (!state.enabled) {
+    state.preset = null;
+    state.customUA = null;
+  }
+
   currentLang = state.lang;
   langBtn.textContent = currentLang.toUpperCase();
 
@@ -747,17 +757,25 @@ chrome.storage.onChanged.addListener((changes, area) => {
       ? stored.collapsed
       : defaultCollapsed();
 
+    const nextEnabled = !!stored.enabled;
+
     let nextPreset = null;
-    if (stored.presetKey) {
-      nextPreset = PRESETS.find((p) => presetKey(p) === stored.presetKey) || null;
-    } else if (stored.presetUA) {
-      nextPreset = PRESETS.find((p) => p.ua === stored.presetUA) || null;
+    let nextCustom = stored.customUA || null;
+
+    if (nextEnabled) {
+      if (stored.presetKey) {
+        nextPreset = PRESETS.find((p) => presetKey(p) === stored.presetKey) || null;
+      } else if (stored.presetUA) {
+        nextPreset = PRESETS.find((p) => p.ua === stored.presetUA) || null;
+      }
+    } else {
+      nextCustom = null;
     }
 
     const nextState = {
-      enabled: !!stored.enabled,
+      enabled: nextEnabled,
       preset: nextPreset,
-      customUA: stored.customUA || null,
+      customUA: nextCustom,
       collapsed: nextCollapsed,
       theme: nextTheme,
       lang: nextLang,
