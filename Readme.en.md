@@ -6,7 +6,7 @@
 
 A browser extension that spoofs User-Agent and Client Hints to a selected profile.
 
-![Version](https://img.shields.io/badge/Version-1.7.0-7c6cff)
+![Version](https://img.shields.io/badge/Version-1.8.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)
 ![Chromium](https://img.shields.io/badge/Chromium-✓-4ade80)
 ![License](https://img.shields.io/badge/License-MIT-8b8b9a)
@@ -58,7 +58,7 @@ git clone https://github.com/smi-falcon/User-Agent-Spoofer.git
 ```
 ## Usage:
 
-Open the extension in your browser.
+1. Open the extension in your browser.
 2. On the Profiles tab, choose the desired User-Agent.
 3. Turn on the toggle in the header.
 4. Reload open tabs to apply the changes.
@@ -82,7 +82,7 @@ User-Agent-Spoofer/
 ├── Readme.md
 ├── Readme.en.md
 ├── Changelog.md
-├── License
+├── License.md
 └── icons/
     ├── icon16.png
     ├── icon32.png

@@ -83,12 +83,30 @@ body {
 
 .header h1 {
   margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.title-text {
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.version {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  flex-shrink: 0;
+  letter-spacing: 0;
+  align-self: flex-start;
+  margin-top: 1px;
 }
 
 #status {
@@ -348,7 +366,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 10px 6px 22px;
+  padding: 6px 10px 6px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   user-select: none;
@@ -361,6 +379,40 @@ body {
 
 .item.active {
   background: var(--accent-soft);
+}
+
+.item-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.item-icons {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: color 0.15s;
+}
+
+.item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+}
+
+.item-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.item.active .item-icons {
+  color: var(--accent);
 }
 
 .item-name {

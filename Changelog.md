@@ -1,5 +1,24 @@
 # Changelog
 
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.8.0] - 2026-10-16
+
+### Added
+
+- Version number shown next to the title in the header, pulled from the manifest at runtime.
+- Monochrome SVG icons for operating systems (Windows, macOS, Linux, iOS, Android).
+- OS icons rendered for each profile item, matching the panel color scheme and highlighting on hover and active state.
+- `author` and `homepage_url` fields in `manifest.json`.
+
+### Changed
+
+- Header layout adjusted to fit the version badge.
+- Profile item padding tuned to align OS icon with the platform name.
+
 ## [1.7.0] - 2026-10-15
 
 ### Added

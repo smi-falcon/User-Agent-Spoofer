@@ -4,6 +4,7 @@ const statusEl = document.getElementById("status");
 const customBtn = document.getElementById("custom-btn");
 const themeBtn = document.getElementById("theme-btn");
 const langBtn = document.getElementById("lang-btn");
+const versionEl = document.getElementById("version");
 const footerEl = document.querySelector(".panel-profiles .footer");
 
 const tabs = document.querySelectorAll(".tab");
@@ -101,6 +102,14 @@ const BROWSER_LABELS = {
   Yandex: "Yandex Browser"
 };
 
+const OS_ICONS = {
+  Windows: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3.6L7 3v4.4H2zM8 2.85L14.5 2v5.4H8zM2 8.6h5V13L2 12.4zM8 8.6h6.5V14L8 13.15z"/></svg>',
+  macOS: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.3 8.2c0-1.3 1-1.9 1.1-1.9-.6-1-1.6-1-1.9-1-.8-.1-1.5.5-1.9.5-.4 0-1-.5-1.7-.5-.9 0-1.7.5-2.1 1.3-.9 1.6-.2 3.9.6 5.1.4.6 1 1.3 1.6 1.3.7 0 .9-.4 1.7-.4s1 .4 1.7.4c.7 0 1.2-.6 1.6-1.3.5-.8.7-1.5.7-1.5 0 0-1.4-.5-1.4-2zM10.1 4.2c.4-.4.6-1 .5-1.7-.5 0-1.2.4-1.5.8-.4.4-.7 1-.5 1.7.6 0 1.2-.4 1.5-.8z"/></svg>',
+  Linux: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1c-1.4 0-2.4 1.1-2.4 2.4 0 .6.2 1.1.5 1.6C5 6 4 7.4 4 9c0 .4.1.9.2 1.3-.4.3-.7.9-.7 1.4 0 .4.2.8.5 1h8c.3-.2.5-.6.5-1 0-.5-.3-1.1-.7-1.4.1-.4.2-.9.2-1.3 0-1.6-1-3-2.1-4 .3-.5.5-1 .5-1.6C10.4 2.1 9.4 1 8 1zm-1.5 3c.3 0 .5.2.5.5s-.2.5-.5.5-.5-.2-.5-.5.2-.5.5-.5zm3 0c.3 0 .5.2.5.5s-.2.5-.5.5-.5-.2-.5-.5.2-.5.5-.5zM8 6c.6 0 1.1.4 1.1 1H6.9c0-.6.5-1 1.1-1z"/></svg>',
+  iOS: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.3 8.2c0-1.3 1-1.9 1.1-1.9-.6-1-1.6-1-1.9-1-.8-.1-1.5.5-1.9.5-.4 0-1-.5-1.7-.5-.9 0-1.7.5-2.1 1.3-.9 1.6-.2 3.9.6 5.1.4.6 1 1.3 1.6 1.3.7 0 .9-.4 1.7-.4s1 .4 1.7.4c.7 0 1.2-.6 1.6-1.3.5-.8.7-1.5.7-1.5 0 0-1.4-.5-1.4-2zM10.1 4.2c.4-.4.6-1 .5-1.7-.5 0-1.2.4-1.5.8-.4.4-.7 1-.5 1.7.6 0 1.2-.4 1.5-.8z"/></svg>',
+  Android: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 6.5v5c0 .8.7 1.5 1.5 1.5h.5v2c0 .5.4 1 1 1s1-.5 1-1v-2h1v2c0 .5.4 1 1 1s1-.5 1-1v-2h.5c.8 0 1.5-.7 1.5-1.5v-5H4zM3 6.5c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1s1-.4 1-1v-3c0-.6-.4-1-1-1zM13 6.5c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1s1-.4 1-1v-3c0-.6-.4-1-1-1zM5.6 3l-.7-1.2c-.1-.1 0-.2.1-.2.1 0 .2 0 .2.1L6 3c.6-.3 1.3-.4 2-.4s1.4.1 2 .4l.8-1.3c0-.1.2-.1.2-.1.1 0 .2.1.1.2L10.4 3c1.8 1 3 2.7 3 4.5H2.6c0-1.8 1.2-3.5 3-4.5z"/></svg>'
+};
+
 const LS_KEY = "ua-spoofer-cache";
 
 let lastCheckResult = null;
@@ -124,6 +133,21 @@ function t(key) {
 function detectDefaultLang() {
   const nav = (navigator.language || "en").toLowerCase();
   return nav.startsWith("ru") ? "ru" : "en";
+}
+
+function detectOS(platform) {
+  const p = platform || "";
+  if (/Windows/i.test(p)) return "Windows";
+  if (/iPhone|iPad|iPod/i.test(p)) return "iOS";
+  if (/Android/i.test(p)) return "Android";
+  if (/macOS|Mac OS|Intel Mac/i.test(p)) return "macOS";
+  if (/Linux|Ubuntu|Fedora/i.test(p)) return "Linux";
+  return null;
+}
+
+function osIcon(platform) {
+  const os = detectOS(platform);
+  return os ? OS_ICONS[os] || "" : "";
 }
 
 function applyTranslations() {
@@ -324,11 +348,17 @@ function renderProfiles() {
       }
 
       const version = extractVersion(preset);
+      const osSvg = osIcon(preset.platform);
 
       itemEl.innerHTML = `
-        <span class="item-name">
-          <span class="item-platform">${escapeHtml(preset.platform)}</span>
-          ${version ? `<span class="item-version">${escapeHtml(version)}</span>` : ""}
+        <span class="item-left">
+          <span class="item-icons">
+            ${osSvg ? `<span class="item-icon">${osSvg}</span>` : ""}
+          </span>
+          <span class="item-name">
+            <span class="item-platform">${escapeHtml(preset.platform)}</span>
+            ${version ? `<span class="item-version">${escapeHtml(version)}</span>` : ""}
+          </span>
         </span>
         <svg class="item-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       `;
@@ -674,6 +704,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 (function boot() {
+  const manifest = chrome.runtime.getManifest();
+  versionEl.textContent = "v" + manifest.version;
+
   const cached = lsLoad();
 
   if (cached.theme === "light" || cached.theme === "dark") {
