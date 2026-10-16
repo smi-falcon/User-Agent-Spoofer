@@ -598,10 +598,6 @@ toggleEl.addEventListener("change", () => {
     return;
   }
   state.enabled = toggleEl.checked;
-  if (!state.enabled) {
-    state.preset = null;
-    state.customUA = null;
-  }
   save();
   renderProfiles();
 });
@@ -752,11 +748,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     ? cached.excludedDomains
     : [];
 
-  if (!state.enabled || !hasActiveProfile()) {
-    state.enabled = false;
-    state.preset = null;
-    state.customUA = null;
-  }
+  enforceProfileRule();
 
   currentLang = state.lang;
   langBtn.textContent = currentLang.toUpperCase();
@@ -778,8 +770,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
       ? stored.collapsed
       : defaultCollapsed();
 
-    let nextEnabled = !!stored.enabled;
-
     let nextPreset = null;
     if (stored.presetKey) {
       nextPreset = PRESETS.find((p) => presetKey(p) === stored.presetKey) || null;
@@ -787,12 +777,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
       nextPreset = PRESETS.find((p) => p.ua === stored.presetUA) || null;
     }
 
-    let nextCustom = stored.customUA || null;
+    let nextEnabled = !!stored.enabled;
+    const nextCustom = stored.customUA || null;
 
-    if (!nextEnabled || (!nextPreset && !nextCustom)) {
+    if (!nextPreset && !nextCustom) {
       nextEnabled = false;
-      nextPreset = null;
-      nextCustom = null;
     }
 
     const nextState = {
