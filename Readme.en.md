@@ -6,7 +6,7 @@
 
 An extension to spoof User-Agent, Client Hints, and Accept-Language for fingerprinting protection.
 
-![Version](https://img.shields.io/badge/Version-1.9.0-7c6cff)
+![Version](https://img.shields.io/badge/Version-1.10.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)
 ![Chromium](https://img.shields.io/badge/Chromium-✓-4ade80)
 ![License](https://img.shields.io/badge/License-MIT-8b8b9a)
@@ -38,6 +38,7 @@ An extension to spoof User-Agent, Client Hints, and Accept-Language for fingerpr
 - **Accept-Language spoofing:** choose one of 107 locales to match the IP region and prevent language leaks when using a virtual private network.
 - **Built-in check:** the **Check** tab sends a test request and shows which headers match and which leak.
 - **Exception list** for Cloudflare Turnstile captcha sites and any other domains of your choice.
+- **Import and export exceptions:** save the domain list to a file and load it from a file (JSON or plain text).
 - **Custom User-Agent** - arbitrary string input.
 - **Light and dark themes.**
 - **RU / EN interface language.**

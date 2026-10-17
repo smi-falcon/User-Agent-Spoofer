@@ -20,6 +20,8 @@ const excListEl = document.getElementById("exc-list");
 const excInput = document.getElementById("exc-input");
 const excAddBtn = document.getElementById("exc-add-btn");
 const excClearBtn = document.getElementById("exc-clear-btn");
+const excImportBtn = document.getElementById("exc-import-btn");
+const excExportBtn = document.getElementById("exc-export-btn");
 
 const checkListEl = document.getElementById("check-list");
 const checkBtn = document.getElementById("check-btn");
@@ -41,6 +43,8 @@ const I18N = {
     excPlaceholder: "example.com",
     excAddBtn: "Добавить",
     excClearBtn: "Очистить всё",
+    excImportBtn: "Импорт",
+    excExportBtn: "Экспорт",
     excEmpty: "Список пуст",
     excRemove: "Удалить",
     checkEmpty: "Нажмите «Проверить» для анализа заголовков",
@@ -75,6 +79,8 @@ const I18N = {
     excPlaceholder: "example.com",
     excAddBtn: "Add",
     excClearBtn: "Clear all",
+    excImportBtn: "Import",
+    excExportBtn: "Export",
     excEmpty: "List is empty",
     excRemove: "Remove",
     checkEmpty: "Click «Check» to analyze headers",
@@ -444,6 +450,73 @@ function openLangDropdown() {
 
 function closeLangDropdown() {
   langDropdown.hidden = true;
+}
+
+function parseImport(text) {
+  if (!text) return [];
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      const data = JSON.parse(trimmed);
+      let list = [];
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (data && Array.isArray(data.excludedDomains)) {
+        list = data.excludedDomains;
+      }
+      return list.map(normalizeDomain).filter(Boolean);
+    } catch (e) {}
+  }
+
+  return trimmed
+    .split(/[\r\n,;]+/)
+    .map(normalizeDomain)
+    .filter(Boolean);
+}
+
+function exportExceptions() {
+  if (!state.excludedDomains.length) return;
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    excludedDomains: [...state.excludedDomains].sort()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "user-agent-spoofer-exceptions.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function importExceptions() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,.txt,application/json,text/plain";
+  input.addEventListener("change", async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    let text = "";
+    try {
+      text = await file.text();
+    } catch (e) {
+      return;
+    }
+    const imported = parseImport(text);
+    if (!imported.length) return;
+    const merged = new Set([...state.excludedDomains, ...imported]);
+    state.excludedDomains = Array.from(merged);
+    await save();
+    renderExceptions();
+  });
+  input.click();
 }
 
 function renderProfiles() {
@@ -905,6 +978,9 @@ excClearBtn.addEventListener("click", async () => {
   await save();
   renderExceptions();
 });
+
+excImportBtn.addEventListener("click", importExceptions);
+excExportBtn.addEventListener("click", exportExceptions);
 
 checkBtn.addEventListener("click", runCheck);
 

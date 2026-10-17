@@ -6,7 +6,7 @@
 
 Расширение для подмены User-Agent, Client Hints и Accept-Language для защиты от фингерпринтинга.
 
-![Version](https://img.shields.io/badge/Version-1.9.0-7c6cff)
+![Version](https://img.shields.io/badge/Version-1.10.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)
 ![Chromium](https://img.shields.io/badge/Chromium-✓-4ade80)
 ![License](https://img.shields.io/badge/License-MIT-8b8b9a)
@@ -38,6 +38,7 @@
 - **Подмена Accept-Language:** выбор языка из 107 локалей для согласования с регионом IP и защиты от утечек языка при использовании виртуальной частной сети.
 - **Встроенная проверка:** вкладка **Проверка** отправляет тестовый запрос и показывает, какие заголовки совпадают, а какие утекают.
 - **Список исключений** для сайтов с капчей Cloudflare Turnstile и для любых других доменов по вашему выбору.
+- **Импорт и экспорт исключений:** сохранение списка доменов в файл и загрузка из файла (JSON или plain text).
 - **Свой User-Agent** - ввод произвольной строки.
 - **Светлая и тёмная темы.**
 
