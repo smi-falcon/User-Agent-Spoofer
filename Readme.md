@@ -4,7 +4,7 @@
 
 # User-Agent Spoofer
 
-Расширение для браузера, подменяющее User-Agent и Client Hints на выбранный профиль.
+Расширение для подмены User-Agent, Client Hints и Accept-Language для защиты от фингерпринтинга.
 
 ![Version](https://img.shields.io/badge/Version-1.9.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)

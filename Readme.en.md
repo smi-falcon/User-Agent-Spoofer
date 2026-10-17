@@ -4,7 +4,7 @@
 
 # User-Agent Spoofer
 
-A browser extension that spoofs User-Agent and Client Hints to a selected profile.
+An extension to spoof User-Agent, Client Hints, and Accept-Language for fingerprinting protection.
 
 ![Version](https://img.shields.io/badge/Version-1.9.0-7c6cff)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-7c6cff)

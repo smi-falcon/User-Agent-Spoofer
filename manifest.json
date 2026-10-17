@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "User-Agent Spoofer",
   "version": "1.9.0",
-  "description": "Подменяет User-Agent и Client Hints браузера на выбранный профиль.",
+  "description": "Подмена User-Agent, Client Hints и Accept-Language для защиты от фингерпринтинга.",
   "author": "Falcon",
   "homepage_url": "https://github.com/smi-falcon/User-Agent-Spoofer",
   "icons": {
