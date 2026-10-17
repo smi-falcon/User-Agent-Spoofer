@@ -29,7 +29,7 @@ An extension to spoof User-Agent, Client Hints, and Accept-Language for fingerpr
 
 ## Features:
 
-- **Ready-to-use profiles:** Chrome, Mozilla Firefox, Safari, Internet Explorer, Microsoft Edge, Opera, Vivaldi Browser, Yandex Browser.
+- **Ready-to-use profiles:** Google Chrome, Mozilla Firefox, Apple Safari, Internet Explorer, Microsoft Edge, Opera, Vivaldi Browser, Yandex Browser.
 - **All platforms:** Windows, macOS, Linux, iOS, Android.
 - **Two-level spoofing:** HTTP headers and JavaScript `navigator` properties.
 - **Full Client Hints support:** all modern `Sec-CH-UA-*` headers, including `Full-Version-List`, `Arch`, `Bitness`, `WoW64`, `Model`, `Form-Factors`.
@@ -66,7 +66,7 @@ git clone https://github.com/smi-falcon/User-Agent-Spoofer.git
 
 On the **Exceptions** tab, add the domain of a site where Cloudflare Turnstile throws an error or loops during captcha verification. After that, spoofing is fully disabled for that domain and its subdomains.
 
-On the **Check** tab, click the **Check** button — the extension sends a test request to httpbin.org, retrieves the list of sent headers, and compares them against the selected profile. The report shows a status for each header: match, mismatch, missing, or leak. A leak is a header that should not be sent for the selected profile but still reached the server. For profiles without Client Hints (Firefox, Safari, Internet Explorer), the check will only show user-agent - this is correct behavior, because those browsers do not support Client Hints.
+On the **Check** tab, click the **Check** button - the extension sends a test request to httpbin.org, retrieves the list of sent headers, and compares them against the selected profile. The report shows a status for each header: match, mismatch, missing, or leak. A leak is a header that should not be sent for the selected profile but still reached the server. For profiles without Client Hints (Mozilla Firefox, Apple Safari, Internet Explorer), the check will only show `User-Agent` - this is correct behavior, because those browsers do not support `Client Hints`.
 
 ## Structure:
 
@@ -103,7 +103,7 @@ The extension applies spoofing at **two levels**:
 
 Rules are configured through `declarativeNetRequest` - this is more reliable and faster than intercepting via `XMLHttpRequest` or `fetch`, and it does not require permission to read page content.
 
-JavaScript property spoofing is performed in the page context itself, not inside the isolated environment of the extension. Content scripts by default run in a separate sandbox and cannot override the global objects that the site sees.
+JavaScript property spoofing is performed in the page context itself, not inside the isolated environment of the extension. `Content scripts` by default run in a separate sandbox and cannot override the global objects that the site sees.
 
 ## About Accept-Language:
 
@@ -112,6 +112,10 @@ By default, the browser sends the `Accept-Language` header with the languages co
 The extension lets you choose `Accept-Language` manually. The list includes 107 locales from Europe, America, and Asia. The language is spoofed simultaneously in the HTTP header and in JavaScript (`navigator.language`, `navigator.languages`, `Intl` locale), so there is no discrepancy between the network and JS.
 
 **Recommendation:** choose the language that matches the exit node country. Then checks that compare the language region with the IP region will show consistency.
+
+**Example:** if your IP address is located in the Netherlands, choose `nl-NL` - then the language region will match the IP region.
+
+**Important:** If you spoof the language to a different country's locale but then access your own services that expect your real language (for example, email, a bank, or another service from your home country), they may behave incorrectly - for example, show the interface in another language or change the currency. Such services should be added to the **Exceptions** tab so that language spoofing does not apply to them.
 
 ## Limitations:
 
